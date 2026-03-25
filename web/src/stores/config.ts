@@ -5,9 +5,11 @@ export interface ResolvedPaths {
   staticConfig: string
   dynamicDir: string
   acmePath: string
+  accessLogPath: string
   staticConfigFound: boolean
   dynamicDirFound: boolean
   acmePathFound: boolean
+  accessLogFound: boolean
 }
 
 export interface ValidationWarning {

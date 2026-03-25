@@ -86,9 +86,14 @@ func (s *Server) refreshPaths() {
 			log.Printf("warn: parsing traefik config for path resolution: %v", err)
 		} else {
 			rp.DynamicDir, rp.AcmePath = traefik.ResolvePaths(s.cfg.TraefikConfigPath, cfg)
+			if cfg.AccessLog != nil && cfg.AccessLog.FilePath != "" {
+				rp.AccessLogPath = cfg.AccessLog.FilePath
+			}
 		}
 	}
 
+	// Re-check existence after paths may have been overridden from traefik.yml.
+	rp.RefreshFoundFlags()
 	s.paths = rp
 }
 
@@ -121,6 +126,8 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/certificates", s.handleGetCerts)
 	s.mux.HandleFunc("/api/docker", s.handleGetDocker)
 	s.mux.HandleFunc("/api/audit", s.handleGetAudit)
+	s.mux.HandleFunc("/api/accesslog", s.handleAccessLogRecent)
+	s.mux.HandleFunc("/api/accesslog/stream", s.handleAccessLogStream)
 	s.mux.HandleFunc("/api/traefik/", s.handleTraefikProxy)
 
 	// SPA fallback — serve index.html for all unknown paths.

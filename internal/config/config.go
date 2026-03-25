@@ -41,9 +41,11 @@ type ResolvedPaths struct {
 	StaticConfig      string `json:"staticConfig"`
 	DynamicDir        string `json:"dynamicDir"`
 	AcmePath          string `json:"acmePath"`
+	AccessLogPath     string `json:"accessLogPath"`
 	StaticConfigFound bool   `json:"staticConfigFound"`
 	DynamicDirFound   bool   `json:"dynamicDirFound"`
 	AcmePathFound     bool   `json:"acmePathFound"`
+	AccessLogFound    bool   `json:"accessLogFound"`
 }
 
 // Resolve determines the dynamic dir and acme path from the static config path.
@@ -63,15 +65,30 @@ func Resolve(staticConfigPath string) *ResolvedPaths {
 		rp.AcmePath = filepath.Join(dir, "acme.json")
 	}
 
-	// Check existence of dynamic dir and acme.json independently.
+	rp.RefreshFoundFlags()
+	return rp
+}
+
+// RefreshFoundFlags re-checks whether DynamicDir, AcmePath and AccessLogPath exist on disk.
+// Call this after overriding the paths from traefik.yml.
+func (rp *ResolvedPaths) RefreshFoundFlags() {
 	if info, err := os.Stat(rp.DynamicDir); err == nil && info.IsDir() {
 		rp.DynamicDirFound = true
+	} else {
+		rp.DynamicDirFound = false
 	}
 	if _, err := os.Stat(rp.AcmePath); err == nil {
 		rp.AcmePathFound = true
+	} else {
+		rp.AcmePathFound = false
 	}
-
-	return rp
+	if rp.AccessLogPath != "" {
+		if _, err := os.Stat(rp.AccessLogPath); err == nil {
+			rp.AccessLogFound = true
+		} else {
+			rp.AccessLogFound = false
+		}
+	}
 }
 
 func envOr(key, fallback string) string {

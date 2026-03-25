@@ -6,6 +6,7 @@ import DynamicEditor from '@/views/DynamicEditor.vue'
 import Certificates from '@/views/Certificates.vue'
 import DockerLabels from '@/views/DockerLabels.vue'
 import AuditLog from '@/views/AuditLog.vue'
+import Activity from '@/views/Activity.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/certificates',  component: Certificates,  name: 'certificates' },
     { path: '/docker',        component: DockerLabels,  name: 'docker' },
     { path: '/audit',         component: AuditLog,      name: 'audit' },
+    { path: '/activity',      component: Activity,      name: 'activity' },
   ],
 })
 
