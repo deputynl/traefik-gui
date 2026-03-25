@@ -2,47 +2,39 @@ REGISTRY  ?= ghcr.io/deputynl
 IMAGE     ?= traefik-gui
 TAG       ?= latest
 
-# ── local builds ────────────────────────────────────────────────────────────
-.PHONY: build build-arm64 push push-arm64 setup-builder
+.PHONY: build build-arm64 release login setup-builder
 
-## Build for the current machine (amd64)
+# ── day-to-day ───────────────────────────────────────────────────────────────
+
+## Build + push multi-arch image (amd64 + arm64) to ghcr.io — use this for releases
+release:
+	docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		--push \
+		-t $(REGISTRY)/$(IMAGE):$(TAG) .
+
+## Build for the local machine only (no push, loads into docker daemon)
 build:
 	docker buildx build \
 		--platform linux/amd64 \
 		--load \
 		-t $(IMAGE):$(TAG) .
 
-## Build for Raspberry Pi (arm64) and load into local daemon
+## Build arm64 image and load into local docker daemon (for testing)
 build-arm64:
 	docker buildx build \
 		--platform linux/arm64 \
 		--load \
 		-t $(IMAGE):$(TAG)-arm64 .
 
-# ── registry workflow ────────────────────────────────────────────────────────
-## Push amd64 image to the internal registry
-push:
-	docker buildx build \
-		--platform linux/amd64 \
-		--push \
-		-t $(REGISTRY)/$(IMAGE):$(TAG) .
-
-## Push arm64 image to the internal registry (for the Pi)
-push-arm64:
-	docker buildx build \
-		--platform linux/arm64 \
-		--push \
-		-t $(REGISTRY)/$(IMAGE):$(TAG)-arm64 .
-
-## Push a multi-arch manifest (amd64 + arm64) in one shot
-push-multi:
-	docker buildx build \
-		--platform linux/amd64,linux/arm64 \
-		--push \
-		-t $(REGISTRY)/$(IMAGE):$(TAG) .
-
 # ── one-time setup ───────────────────────────────────────────────────────────
-## Create a dedicated buildx builder that supports cross-compilation
+
+## Log in to ghcr.io (run once; needs GITHUB_PAT env var or will prompt)
+login:
+	@echo "$(GITHUB_PAT)" | docker login ghcr.io -u deputynl --password-stdin 2>/dev/null || \
+		docker login ghcr.io -u deputynl
+
+## Create a buildx builder with cross-compilation support (run once per machine)
 setup-builder:
 	docker buildx create \
 		--name multibuilder \

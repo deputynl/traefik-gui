@@ -1,11 +1,7 @@
 name: Build & Push Docker image
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:  # manual trigger only — use `make release` for day-to-day builds
 
 env:
   REGISTRY: ghcr.io
