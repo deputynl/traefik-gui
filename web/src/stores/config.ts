@@ -6,6 +6,13 @@ export interface ResolvedPaths {
   dynamicDir: string
   acmePath: string
   staticConfigFound: boolean
+  dynamicDirFound: boolean
+  acmePathFound: boolean
+}
+
+export interface ValidationWarning {
+  field: string
+  message: string
 }
 
 export interface EntryPointRedirect {
@@ -115,8 +122,8 @@ export const useConfigStore = defineStore('config', () => {
     }
   }
 
-  /** Save static config as JSON (from form editor). */
-  async function saveConfigJSON(cfg: StaticConfig): Promise<boolean> {
+  /** Save static config as JSON (from form editor). Returns warnings array or throws. */
+  async function saveConfigJSON(cfg: StaticConfig): Promise<ValidationWarning[]> {
     saving.value = true
     error.value = null
     try {
@@ -129,18 +136,19 @@ export const useConfigStore = defineStore('config', () => {
         const j = await res.json().catch(() => ({ error: res.statusText }))
         throw new Error(j.error ?? res.statusText)
       }
+      const j = await res.json()
       await fetchConfig()
-      return true
+      return j.warnings ?? []
     } catch (e) {
       error.value = String(e)
-      return false
+      throw e
     } finally {
       saving.value = false
     }
   }
 
   /** Save static config as raw YAML (from YAML editor). */
-  async function saveConfigRaw(yaml: string): Promise<boolean> {
+  async function saveConfigRaw(yaml: string): Promise<ValidationWarning[]> {
     saving.value = true
     error.value = null
     try {
@@ -154,10 +162,10 @@ export const useConfigStore = defineStore('config', () => {
         throw new Error(j.error ?? res.statusText)
       }
       await fetchConfig()
-      return true
+      return []
     } catch (e) {
       error.value = String(e)
-      return false
+      throw e
     } finally {
       saving.value = false
     }

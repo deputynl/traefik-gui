@@ -34,8 +34,9 @@
         <NavItem to="/" :icon="IconDashboard" label="Dashboard" />
         <NavItem to="/static" :icon="IconFile" label="Static Config" />
         <NavItem to="/dynamic" :icon="IconLayers" label="Dynamic Config" />
-        <NavItem to="/certificates" :icon="IconCert" label="Certificates" />
+        <NavItem to="/certificates" :icon="IconCert" label="Certificates" :badge="certBadge" />
         <NavItem to="/docker" :icon="IconDocker" label="Docker Labels" />
+        <NavItem to="/audit" :icon="IconAudit" label="Audit Log" />
       </nav>
 
       <!-- Footer: status + user -->
@@ -73,22 +74,38 @@ import NavItem from '@/components/NavItem.vue'
 import Login from '@/views/Login.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
+import { useCertStore } from '@/stores/certs'
 
 const IconDashboard = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>` }
 const IconFile = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0121 9.414V19a2 2 0 01-2 2z"/></svg>` }
 const IconLayers = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>` }
 const IconCert = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>` }
 const IconDocker = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>` }
+const IconAudit = { template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>` }
 
 const auth = useAuthStore()
 const configStore = useConfigStore()
+const certStore = useCertStore()
+
 const traefikOnline = computed(() => configStore.status?.traefik ?? false)
+
+const certBadge = computed(() => {
+  const expired = certStore.expired.length
+  const soon = certStore.expiringSoon.length
+  if (expired) return { text: String(expired), color: 'red' }
+  if (soon) return { text: String(soon), color: 'yellow' }
+  return null
+})
 
 let pollTimer: ReturnType<typeof setInterval>
 
 function onLogin() {
   configStore.fetchStatus()
-  pollTimer = setInterval(() => configStore.fetchStatus(), 15_000)
+  certStore.fetchCerts()
+  pollTimer = setInterval(() => {
+    configStore.fetchStatus()
+    certStore.fetchCerts()
+  }, 60_000)
 }
 
 async function logout() {

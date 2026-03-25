@@ -11,6 +11,8 @@ services:
     volumes:
       # Mount your Traefik config directory (read + write so the GUI can save changes).
       - /etc/traefik:/etc/traefik
+      # Mount Docker socket (read-only) to enable the Docker Labels inspector.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       # Must be on the same network as Traefik so the GUI can reach the API
       # and so Traefik can route to the GUI via labels below.

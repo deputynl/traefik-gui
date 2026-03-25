@@ -91,6 +91,7 @@ func (s *Server) dynamicSave(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+	s.audit.Log(s.userFromRequest(r), "save_dynamic_config", name)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
 }
 
@@ -110,6 +111,7 @@ func (s *Server) dynamicDelete(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	s.audit.Log(s.userFromRequest(r), "delete_dynamic_config", name)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
@@ -148,6 +150,7 @@ func (s *Server) dynamicCreate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	s.audit.Log(s.userFromRequest(r), "create_dynamic_config", filename)
 	writeJSON(w, http.StatusCreated, map[string]string{"name": filename, "status": "created"})
 }
 

@@ -3,6 +3,22 @@ package traefik
 // DynamicConfig represents the content of a single Traefik dynamic config file.
 type DynamicConfig struct {
 	HTTP *HTTPDynamicConfig `yaml:"http,omitempty" json:"http,omitempty"`
+	TLS  *TLSDynamicConfig  `yaml:"tls,omitempty"  json:"tls,omitempty"`
+}
+
+type TLSDynamicConfig struct {
+	Options map[string]TLSOption `yaml:"options,omitempty" json:"options,omitempty"`
+}
+
+type TLSOption struct {
+	MinVersion   string      `yaml:"minVersion,omitempty"   json:"minVersion,omitempty"`
+	CipherSuites []string    `yaml:"cipherSuites,omitempty" json:"cipherSuites,omitempty"`
+	ClientAuth   *ClientAuth `yaml:"clientAuth,omitempty"   json:"clientAuth,omitempty"`
+}
+
+type ClientAuth struct {
+	CAFiles        []string `yaml:"caFiles,omitempty"        json:"caFiles,omitempty"`
+	ClientAuthType string   `yaml:"clientAuthType,omitempty" json:"clientAuthType,omitempty"`
 }
 
 type HTTPDynamicConfig struct {

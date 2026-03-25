@@ -5,8 +5,10 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 
+	"traefik-gui/internal/audit"
 	"traefik-gui/internal/auth"
 	"traefik-gui/internal/config"
 	"traefik-gui/internal/traefik"
@@ -19,6 +21,7 @@ type Server struct {
 	mux   *http.ServeMux
 	webFS fs.FS
 	auth  *auth.Manager
+	audit *audit.Logger
 }
 
 // New creates and configures a new Server.
@@ -34,6 +37,10 @@ func New(cfg *config.AppConfig, webFiles fs.FS) *Server {
 	}
 	s.webFS = distFS
 	s.refreshPaths()
+
+	auditPath := filepath.Join(filepath.Dir(cfg.TraefikConfigPath), "traefik-gui-audit.log")
+	s.audit = audit.NewLogger(auditPath)
+
 	s.mux = http.NewServeMux()
 	s.registerRoutes()
 	return s
@@ -48,16 +55,13 @@ func (s *Server) Start() error {
 	log.Printf("  acme.json     : %s", s.paths.AcmePath)
 	log.Printf("  traefik api   : %s", s.cfg.TraefikAPIURL)
 	log.Printf("  auth user     : %s", s.cfg.GUIUser)
-	// Wrap the whole mux with the auth gate.
 	return http.ListenAndServe(addr, s.authGate(s.mux))
 }
 
 // authGate protects all /api/* routes with session auth.
-// /auth/* and static assets are always public.
 func (s *Server) authGate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/api/") {
-			// Static files and /auth/* — no auth required.
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -68,7 +72,6 @@ func (s *Server) authGate(next http.Handler) http.Handler {
 			fmt.Fprint(w, `{"error":"unauthorized"}`)
 			return
 		}
-		// Slide the cookie window on every authenticated API call.
 		s.auth.SetCookie(w, user)
 		next.ServeHTTP(w, r)
 	})
@@ -87,6 +90,12 @@ func (s *Server) refreshPaths() {
 	}
 
 	s.paths = rp
+}
+
+// userFromRequest extracts the authenticated username (already validated by authGate).
+func (s *Server) userFromRequest(r *http.Request) string {
+	user, _ := s.auth.FromRequest(r)
+	return user
 }
 
 func (s *Server) registerRoutes() {
@@ -109,6 +118,9 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/status", s.handleStatus)
 	s.mux.HandleFunc("/api/dynamic", s.handleDynamic)
 	s.mux.HandleFunc("/api/dynamic/{file}", s.handleDynamicFile)
+	s.mux.HandleFunc("/api/certificates", s.handleGetCerts)
+	s.mux.HandleFunc("/api/docker", s.handleGetDocker)
+	s.mux.HandleFunc("/api/audit", s.handleGetAudit)
 	s.mux.HandleFunc("/api/traefik/", s.handleTraefikProxy)
 
 	// SPA fallback — serve index.html for all unknown paths.

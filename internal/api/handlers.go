@@ -52,28 +52,32 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user := s.userFromRequest(r)
 	ct := r.Header.Get("Content-Type")
+
 	if strings.Contains(ct, "application/json") {
-		// Form save: JSON → Go struct → YAML on disk.
 		var cfg traefik.StaticConfig
 		if err := json.Unmarshal(body, &cfg); err != nil {
 			writeError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
 			return
 		}
+		warns := traefik.ValidateStaticConfig(&cfg)
 		if err := traefik.Save(s.cfg.TraefikConfigPath, &cfg); err != nil {
 			writeError(w, http.StatusInternalServerError, "could not save: "+err.Error())
 			return
 		}
+		s.audit.Log(user, "save_static_config", "saved via form editor")
+		s.refreshPaths()
+		writeJSON(w, http.StatusOK, map[string]any{"status": "saved", "warnings": warns})
 	} else {
-		// YAML tab save: validate and write raw content.
 		if err := traefik.WriteRaw(s.cfg.TraefikConfigPath, string(body)); err != nil {
 			writeError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		s.audit.Log(user, "save_static_config", "saved via YAML editor")
+		s.refreshPaths()
+		writeJSON(w, http.StatusOK, map[string]any{"status": "saved", "warnings": []any{}})
 	}
-
-	s.refreshPaths()
-	writeJSON(w, http.StatusOK, map[string]string{"status": "saved"})
 }
 
 // handleTraefikProxy proxies requests to the Traefik API.

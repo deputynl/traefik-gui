@@ -7,7 +7,11 @@
       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/60'"
   >
     <component :is="icon" />
-    {{ label }}
+    <span class="flex-1">{{ label }}</span>
+    <span v-if="badge" class="text-xs font-bold px-1.5 py-0.5 rounded-full leading-none"
+      :class="badge.color === 'red' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'">
+      {{ badge.text }}
+    </span>
   </RouterLink>
 </template>
 
@@ -19,6 +23,7 @@ const props = defineProps<{
   to: string
   icon: object
   label: string
+  badge?: { text: string; color: 'red' | 'yellow' } | null
 }>()
 
 const route = useRoute()

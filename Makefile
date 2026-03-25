@@ -40,6 +40,6 @@ setup-builder:
 		--name multibuilder \
 		--driver docker-container \
 		--bootstrap \
-		--use
+		--use 2>/dev/null || docker buildx use multibuilder
 	docker run --rm --privileged tonistiigi/binfmt --install all
 	@echo "Builder ready. Test with: docker buildx ls"

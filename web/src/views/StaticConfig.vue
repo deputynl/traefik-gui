@@ -52,11 +52,19 @@
       </div>
 
       <!-- Save feedback -->
-      <div v-if="saveMsg" class="mb-5 flex items-center gap-2 text-sm px-4 py-2.5 rounded-lg border"
+      <div v-if="saveMsg" class="mb-5 text-sm px-4 py-2.5 rounded-lg border"
         :class="saveMsg.ok
           ? 'bg-emerald-900/30 border-emerald-800 text-emerald-400'
           : 'bg-red-900/30 border-red-800 text-red-400'">
         {{ saveMsg.text }}
+      </div>
+      <!-- Validation warnings -->
+      <div v-if="warnings.length" class="mb-5 p-4 rounded-lg border bg-yellow-900/20 border-yellow-700/50 text-yellow-300 text-sm space-y-1">
+        <div class="font-semibold mb-1">Saved with warnings:</div>
+        <div v-for="w in warnings" :key="w.field" class="flex gap-2">
+          <span class="font-mono text-yellow-400 flex-shrink-0">{{ w.field }}</span>
+          <span>{{ w.message }}</span>
+        </div>
       </div>
 
       <!-- ── FORM TAB ── -->
@@ -284,6 +292,8 @@ const store = useConfigStore()
 const tab = ref<'form' | 'yaml'>('form')
 const rawContent = ref('')
 const saveMsg = ref<{ ok: boolean; text: string } | null>(null)
+const warnings = ref<Array<{ field: string; message: string }>>([])
+
 let _idCounter = 0
 const uid = () => String(++_idCounter)
 
@@ -469,18 +479,15 @@ function addCertResolver() {
 
 async function save() {
   saveMsg.value = null
-  let ok: boolean
-
-  if (tab.value === 'yaml') {
-    ok = await store.saveConfigRaw(rawContent.value)
-  } else {
-    ok = await store.saveConfigJSON(buildConfig())
-  }
-
-  if (ok) {
+  warnings.value = []
+  try {
+    const warns = tab.value === 'yaml'
+      ? await store.saveConfigRaw(rawContent.value)
+      : await store.saveConfigJSON(buildConfig())
+    warnings.value = warns
     saveMsg.value = { ok: true, text: 'Saved successfully.' }
     setTimeout(() => { saveMsg.value = null }, 3000)
-  } else {
+  } catch {
     saveMsg.value = { ok: false, text: store.error ?? 'Save failed.' }
   }
 }
