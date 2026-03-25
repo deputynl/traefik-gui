@@ -92,7 +92,16 @@ func (s *Server) refreshPaths() {
 		}
 	}
 
-	// Re-check existence after paths may have been overridden from traefik.yml.
+	// Env var overrides take precedence over everything — useful when the path
+	// inside this container differs from the path inside the Traefik container.
+	if s.cfg.AcmePathOverride != "" {
+		rp.AcmePath = s.cfg.AcmePathOverride
+	}
+	if s.cfg.AccessLogPathOverride != "" {
+		rp.AccessLogPath = s.cfg.AccessLogPathOverride
+	}
+
+	// Re-check existence after paths may have been overridden.
 	rp.RefreshFoundFlags()
 	s.paths = rp
 }

@@ -22,16 +22,22 @@ type AppConfig struct {
 	TraefikAPIURL     string
 	GUIUser           string
 	GUIPassword       string
+	// Optional overrides — useful when acme.json / access log live at a
+	// different path inside this container than in the Traefik container.
+	AcmePathOverride      string
+	AccessLogPathOverride string
 }
 
 // Load reads environment variables and returns the app config.
 func Load() *AppConfig {
 	return &AppConfig{
-		Port:              envOr("TRAEFIK_GUI_PORT", DefaultPort),
-		TraefikConfigPath: envOr("TRAEFIK_CONFIG_PATH", DefaultConfigPath),
-		TraefikAPIURL:     envOr("TRAEFIK_API_URL", DefaultAPIURL),
-		GUIUser:           envOr("TRAEFIK_GUI_USER", DefaultUser),
-		GUIPassword:       envOr("TRAEFIK_GUI_PASSWORD", DefaultPassword),
+		Port:                  envOr("TRAEFIK_GUI_PORT", DefaultPort),
+		TraefikConfigPath:     envOr("TRAEFIK_CONFIG_PATH", DefaultConfigPath),
+		TraefikAPIURL:         envOr("TRAEFIK_API_URL", DefaultAPIURL),
+		GUIUser:               envOr("TRAEFIK_GUI_USER", DefaultUser),
+		GUIPassword:           envOr("TRAEFIK_GUI_PASSWORD", DefaultPassword),
+		AcmePathOverride:      os.Getenv("TRAEFIK_ACME_PATH"),
+		AccessLogPathOverride: os.Getenv("TRAEFIK_ACCESS_LOG_PATH"),
 	}
 }
 

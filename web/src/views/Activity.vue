@@ -13,7 +13,6 @@
           </p>
         </div>
         <div class="flex items-center gap-2">
-          <!-- Connection status -->
           <div class="flex items-center gap-1.5 text-xs text-slate-400 mr-2">
             <span class="w-2 h-2 rounded-full flex-shrink-0"
               :class="streamState === 'connected' ? 'bg-emerald-400 animate-pulse' : streamState === 'error' ? 'bg-red-500' : 'bg-slate-500'" />
@@ -42,7 +41,6 @@
 
       <!-- Filter bar -->
       <div v-if="available || entries.length" class="flex flex-wrap gap-2">
-        <!-- Status filter -->
         <div class="flex rounded-lg overflow-hidden border border-slate-700 text-xs">
           <button v-for="f in statusFilters" :key="f.value"
             class="px-3 py-1.5 transition-colors"
@@ -51,7 +49,6 @@
             {{ f.label }}
           </button>
         </div>
-        <!-- Method filter -->
         <div class="flex rounded-lg overflow-hidden border border-slate-700 text-xs">
           <button v-for="m in ['ALL','GET','POST','PUT','DELETE','OTHER']" :key="m"
             class="px-3 py-1.5 transition-colors"
@@ -60,69 +57,112 @@
             {{ m }}
           </button>
         </div>
-        <!-- Search -->
         <input v-model="search" class="input text-xs flex-1 min-w-40"
           placeholder="Filter by host, path, router, IP…" />
-        <span class="text-xs text-slate-500 self-center">
-          {{ filtered.length }} / {{ entries.length }}
-        </span>
+        <span class="text-xs text-slate-500 self-center">{{ filtered.length }} / {{ entries.length }}</span>
       </div>
     </div>
 
-    <!-- Log feed -->
-    <div ref="feedEl" class="flex-1 overflow-y-auto px-8 pb-8 min-h-0">
-      <div v-if="!entries.length && streamState !== 'error'" class="text-center py-16 text-slate-500 text-sm">
-        Waiting for requests…
+    <!-- Main area: log table + optional detail panel -->
+    <div class="flex flex-1 min-h-0">
+      <!-- Log feed -->
+      <div class="flex-1 overflow-y-auto px-8 pb-8 min-h-0">
+        <div v-if="!entries.length && streamState !== 'error'" class="text-center py-16 text-slate-500 text-sm">
+          Waiting for requests…
+        </div>
+        <table v-else class="w-full text-xs font-mono">
+          <thead class="sticky top-0 bg-slate-900 z-10">
+            <tr class="text-left text-slate-500 border-b border-slate-700">
+              <th class="py-2 pr-3 font-medium">Time</th>
+              <th class="py-2 pr-3 font-medium">Method</th>
+              <th class="py-2 pr-3 font-medium">Host + Path</th>
+              <th class="py-2 pr-3 font-medium">Status</th>
+              <th class="py-2 pr-3 font-medium">Duration</th>
+              <th class="py-2 pr-3 font-medium hidden lg:table-cell">Router</th>
+              <th class="py-2 font-medium hidden xl:table-cell">Client IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(entry, i) in filtered" :key="i"
+              class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer"
+              :class="selected === i ? 'bg-sky-900/20 border-sky-800/50' : ''"
+              @click="selected = selected === i ? null : i">
+              <td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">{{ formatTime(entry.time) }}</td>
+              <td class="py-1.5 pr-3 font-bold" :class="methodColor(entry.method)">{{ entry.method }}</td>
+              <td class="py-1.5 pr-3 max-w-xs">
+                <span class="text-slate-400">{{ entry.host }}</span><span class="text-slate-200">{{ entry.path }}</span>
+              </td>
+              <td class="py-1.5 pr-3">
+                <span class="px-1.5 py-0.5 rounded font-bold" :class="statusColor(entry.status)">{{ entry.status }}</span>
+              </td>
+              <td class="py-1.5 pr-3 text-slate-400 whitespace-nowrap">{{ formatDuration(entry.durationMs) }}</td>
+              <td class="py-1.5 pr-3 text-slate-500 hidden lg:table-cell truncate max-w-[12rem]">{{ entry.routerName || '—' }}</td>
+              <td class="py-1.5 text-slate-500 hidden xl:table-cell">{{ entry.clientIp || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      <!-- Table -->
-      <table v-else class="w-full text-xs font-mono">
-        <thead class="sticky top-0 bg-slate-900 z-10">
-          <tr class="text-left text-slate-500 border-b border-slate-700">
-            <th class="py-2 pr-4 font-medium">Time</th>
-            <th class="py-2 pr-4 font-medium">Method</th>
-            <th class="py-2 pr-4 font-medium w-1/3">Host + Path</th>
-            <th class="py-2 pr-4 font-medium">Status</th>
-            <th class="py-2 pr-4 font-medium">Duration</th>
-            <th class="py-2 pr-4 font-medium hidden lg:table-cell">Router</th>
-            <th class="py-2 font-medium hidden xl:table-cell">Client IP</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(entry, i) in filtered" :key="i"
-            class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-default"
-            @click="selected = selected === i ? null : i">
-            <td class="py-1.5 pr-4 text-slate-500 whitespace-nowrap">
-              {{ formatTime(entry.time) }}
-            </td>
-            <td class="py-1.5 pr-4">
-              <span class="font-bold" :class="methodColor(entry.method)">{{ entry.method }}</span>
-            </td>
-            <td class="py-1.5 pr-4 max-w-xs">
-              <span class="text-slate-400">{{ entry.host }}</span>
-              <span class="text-slate-200">{{ entry.path }}</span>
-            </td>
-            <td class="py-1.5 pr-4">
-              <span class="px-1.5 py-0.5 rounded font-bold" :class="statusColor(entry.status)">
-                {{ entry.status }}
+      <!-- Detail panel -->
+      <transition name="slide">
+        <div v-if="selectedEntry" class="w-80 flex-shrink-0 border-l border-slate-700 overflow-y-auto bg-slate-800/50">
+          <div class="sticky top-0 bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Request Detail</span>
+            <button class="text-slate-500 hover:text-slate-300 transition-colors" @click="selected = null">✕</button>
+          </div>
+          <div class="p-4 space-y-3 text-xs">
+            <!-- Status line -->
+            <div class="flex items-center gap-2 pb-3 border-b border-slate-700">
+              <span class="px-2 py-1 rounded font-bold text-sm" :class="statusColor(selectedEntry.status)">
+                {{ selectedEntry.status }}
               </span>
-            </td>
-            <td class="py-1.5 pr-4 text-slate-400 whitespace-nowrap">
-              {{ formatDuration(entry.durationMs) }}
-            </td>
-            <td class="py-1.5 pr-4 text-slate-500 hidden lg:table-cell truncate max-w-xs">
-              {{ entry.routerName || '—' }}
-            </td>
-            <td class="py-1.5 text-slate-500 hidden xl:table-cell">{{ entry.clientIp || '—' }}</td>
-          </tr>
-        </tbody>
-      </table>
+              <span class="font-bold" :class="methodColor(selectedEntry.method)">{{ selectedEntry.method }}</span>
+              <span class="text-slate-300 truncate">{{ selectedEntry.path }}</span>
+            </div>
+
+            <DetailRow label="Time"       :value="new Date(selectedEntry.time).toLocaleString()" />
+            <DetailRow label="Host"       :value="selectedEntry.host" />
+            <DetailRow label="Protocol"   :value="selectedEntry.protocol" v-if="selectedEntry.protocol" />
+            <DetailRow label="Scheme"     :value="selectedEntry.scheme" v-if="selectedEntry.scheme" />
+            <DetailRow label="Client IP"  :value="selectedEntry.clientIp" />
+
+            <div class="border-t border-slate-700 pt-3 space-y-3">
+              <DetailRow label="Entry Point"  :value="selectedEntry.entryPoint" v-if="selectedEntry.entryPoint" />
+              <DetailRow label="Router"       :value="selectedEntry.routerName" v-if="selectedEntry.routerName" />
+              <DetailRow label="Service"      :value="selectedEntry.serviceName" v-if="selectedEntry.serviceName" />
+              <DetailRow label="Backend addr" :value="selectedEntry.serviceAddr" v-if="selectedEntry.serviceAddr" />
+            </div>
+
+            <div class="border-t border-slate-700 pt-3 space-y-3">
+              <DetailRow label="Total duration"    :value="formatDuration(selectedEntry.durationMs)" />
+              <DetailRow label="Origin duration"   :value="formatDuration(selectedEntry.originDurationMs)"
+                v-if="selectedEntry.originDurationMs" />
+              <DetailRow label="Origin status"     :value="String(selectedEntry.originStatus)"
+                v-if="selectedEntry.originStatus && selectedEntry.originStatus !== selectedEntry.status" />
+              <DetailRow label="Retries"           :value="String(selectedEntry.retryAttempts)"
+                v-if="selectedEntry.retryAttempts" />
+            </div>
+
+            <div class="border-t border-slate-700 pt-3 space-y-3">
+              <DetailRow label="Response size" :value="formatBytes(selectedEntry.responseSize)"
+                v-if="selectedEntry.responseSize" />
+              <DetailRow label="Request size"  :value="formatBytes(selectedEntry.requestSize)"
+                v-if="selectedEntry.requestSize" />
+            </div>
+
+            <div v-if="selectedEntry.tlsVersion" class="border-t border-slate-700 pt-3 space-y-3">
+              <DetailRow label="TLS version" :value="selectedEntry.tlsVersion" />
+              <DetailRow label="Cipher"      :value="selectedEntry.tlsCipher" v-if="selectedEntry.tlsCipher" />
+            </div>
+          </div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
 import { useConfigStore } from '@/stores/config'
 
 interface LogEntry {
@@ -130,11 +170,34 @@ interface LogEntry {
   method: string
   host: string
   path: string
+  protocol: string
+  scheme: string
   status: number
   durationMs: number
-  routerName: string
   clientIp: string
+  routerName: string
+  serviceName: string
+  serviceAddr: string
+  entryPoint: string
+  originStatus: number
+  originDurationMs: number
+  retryAttempts: number
+  responseSize: number
+  requestSize: number
+  tlsVersion: string
+  tlsCipher: string
 }
+
+// Tiny helper component to avoid repetition in the detail panel.
+const DetailRow = defineComponent({
+  props: { label: String, value: String },
+  setup(props) {
+    return () => h('div', { class: 'flex gap-2' }, [
+      h('span', { class: 'text-slate-500 w-28 flex-shrink-0' }, props.label),
+      h('span', { class: 'text-slate-300 break-all font-mono' }, props.value || '—'),
+    ])
+  },
+})
 
 const configStore = useConfigStore()
 const entries = ref<LogEntry[]>([])
@@ -143,11 +206,9 @@ const search = ref('')
 const statusFilter = ref('ALL')
 const methodFilter = ref('ALL')
 const selected = ref<number | null>(null)
-const feedEl = ref<HTMLElement | null>(null)
 const streamState = ref<'connecting' | 'connected' | 'error'>('connecting')
 const available = ref(true)
 const unavailableReason = ref('')
-
 const MAX_ENTRIES = 500
 
 const statusFilters = [
@@ -160,16 +221,13 @@ const statusFilters = [
 
 const filtered = computed(() => {
   let list = entries.value
-  if (statusFilter.value !== 'ALL') {
-    const prefix = statusFilter.value
-    list = list.filter(e => String(e.status).startsWith(prefix))
-  }
+  if (statusFilter.value !== 'ALL')
+    list = list.filter(e => String(e.status).startsWith(statusFilter.value))
   if (methodFilter.value !== 'ALL') {
-    if (methodFilter.value === 'OTHER') {
+    if (methodFilter.value === 'OTHER')
       list = list.filter(e => !['GET','POST','PUT','DELETE'].includes(e.method))
-    } else {
+    else
       list = list.filter(e => e.method === methodFilter.value)
-    }
   }
   if (search.value.trim()) {
     const q = search.value.toLowerCase()
@@ -177,34 +235,33 @@ const filtered = computed(() => {
       e.host?.toLowerCase().includes(q) ||
       e.path?.toLowerCase().includes(q) ||
       e.routerName?.toLowerCase().includes(q) ||
+      e.serviceName?.toLowerCase().includes(q) ||
       e.clientIp?.includes(q)
     )
   }
   return list
 })
 
+const selectedEntry = computed(() =>
+  selected.value !== null ? filtered.value[selected.value] ?? null : null
+)
+
 let es: EventSource | null = null
-let atBottom = true
 
 function startStream() {
   streamState.value = 'connecting'
   es = new EventSource('/api/accesslog/stream')
-
-  es.onopen = () => {
-    streamState.value = 'connected'
-  }
-
+  es.onopen = () => { streamState.value = 'connected' }
   es.onmessage = (event) => {
     if (paused.value) return
     try {
       const entry: LogEntry = JSON.parse(event.data)
       entries.value.unshift(entry)
-      if (entries.value.length > MAX_ENTRIES) {
-        entries.value.length = MAX_ENTRIES
-      }
-    } catch { /* ignore malformed */ }
+      if (entries.value.length > MAX_ENTRIES) entries.value.length = MAX_ENTRIES
+      // Shift selection index to follow the entry.
+      if (selected.value !== null) selected.value++
+    } catch { /* ignore */ }
   }
-
   es.onerror = () => {
     streamState.value = 'error'
     available.value = false
@@ -234,28 +291,30 @@ async function loadRecent() {
 function togglePause() { paused.value = !paused.value }
 function clearEntries() { entries.value = []; selected.value = null }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string) {
   if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
-
-function formatDuration(ms: number): string {
-  if (ms === undefined || ms === null) return '—'
+function formatDuration(ms: number) {
+  if (!ms) return '—'
   if (ms < 1) return `${(ms * 1000).toFixed(0)}µs`
   if (ms < 1000) return `${ms.toFixed(1)}ms`
   return `${(ms / 1000).toFixed(2)}s`
 }
-
-function statusColor(status: number): string {
+function formatBytes(b: number) {
+  if (!b) return '—'
+  if (b < 1024) return `${b} B`
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`
+  return `${(b / 1024 / 1024).toFixed(2)} MB`
+}
+function statusColor(status: number) {
   if (status >= 500) return 'bg-red-900/50 text-red-400'
   if (status >= 400) return 'bg-orange-900/50 text-orange-400'
   if (status >= 300) return 'bg-yellow-900/50 text-yellow-400'
   if (status >= 200) return 'bg-emerald-900/50 text-emerald-400'
   return 'bg-slate-700 text-slate-400'
 }
-
-function methodColor(method: string): string {
+function methodColor(method: string) {
   switch (method) {
     case 'GET':    return 'text-sky-400'
     case 'POST':   return 'text-emerald-400'
@@ -268,3 +327,8 @@ function methodColor(method: string): string {
 onMounted(() => loadRecent())
 onUnmounted(() => es?.close())
 </script>
+
+<style scoped>
+.slide-enter-active, .slide-leave-active { transition: width 0.2s ease, opacity 0.2s ease; }
+.slide-enter-from, .slide-leave-to { width: 0; opacity: 0; overflow: hidden; }
+</style>

@@ -8,6 +8,10 @@ services:
       TRAEFIK_API_URL: http://traefik:8080
       TRAEFIK_GUI_USER: ${TRAEFIK_GUI_USER:-admin}
       TRAEFIK_GUI_PASSWORD: ${TRAEFIK_GUI_PASSWORD:-admin}
+      # Set these if the paths inside the Traefik container differ from where
+      # the files are mounted here (e.g. acme.json stored at /acme.json in Traefik).
+      TRAEFIK_ACME_PATH: /etc/traefik/acme.json
+      # TRAEFIK_ACCESS_LOG_PATH: /var/log/traefik/access.log
     volumes:
       # Mount your Traefik config directory (read + write so the GUI can save changes).
       - /etc/traefik:/etc/traefik
