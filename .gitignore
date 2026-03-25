@@ -1,0 +1,19 @@
+web/node_modules/
+web/dist/
+traefik-gui
+*.local
+*.tar
+
+# Environment
+.env
+
+# Docker registry local data
+registry-data/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Claude Code local settings
+.claude/

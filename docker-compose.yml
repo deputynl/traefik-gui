@@ -1,0 +1,27 @@
+services:
+  traefik-gui:
+    image: ghcr.io/deputynl/traefik-gui:latest
+    container_name: traefik-gui
+    restart: unless-stopped
+    environment:
+      TRAEFIK_CONFIG_PATH: /etc/traefik/traefik.yml
+      TRAEFIK_API_URL: http://traefik:8080
+      TRAEFIK_GUI_USER: ${TRAEFIK_GUI_USER:-admin}
+      TRAEFIK_GUI_PASSWORD: ${TRAEFIK_GUI_PASSWORD:-admin}
+    volumes:
+      # Mount your Traefik config directory (read + write so the GUI can save changes).
+      - /etc/traefik:/etc/traefik
+    networks:
+      # Must be on the same network as Traefik so the GUI can reach the API
+      # and so Traefik can route to the GUI via labels below.
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-gui.rule=Host(`traefik-gui.deputy.nl`)"
+      - "traefik.http.routers.traefik-gui.entrypoints=websecure"
+      - "traefik.http.routers.traefik-gui.tls.certresolver=cf-dns"
+      - "traefik.http.services.traefik-gui.loadbalancer.server.port=8888"
+
+networks:
+  traefik:
+    external: true

@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-500;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-slate-800 border border-slate-700 rounded-xl p-5;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-900/50 text-emerald-400 border border-emerald-800;
+  }
+
+  .badge-red {
+    @apply badge bg-red-900/50 text-red-400 border border-red-800;
+  }
+
+  .badge-yellow {
+    @apply badge bg-yellow-900/50 text-yellow-400 border border-yellow-800;
+  }
+
+  .badge-sky {
+    @apply badge bg-sky-900/50 text-sky-400 border border-sky-800;
+  }
+
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900;
+  }
+
+  .btn-primary {
+    @apply btn bg-sky-500 hover:bg-sky-400 text-white focus:ring-sky-500;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-700 hover:bg-slate-600 text-slate-200 focus:ring-slate-500;
+  }
+
+  .field-label {
+    @apply block text-xs font-medium text-slate-400 mb-1.5;
+  }
+
+  .input {
+    @apply bg-slate-900 border border-slate-700 text-slate-200 text-sm rounded-lg px-3 py-2
+           focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-700
+           placeholder:text-slate-600 transition-colors;
+  }
+
+  .path-chip {
+    @apply font-mono text-xs bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg;
+  }
+}

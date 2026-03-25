@@ -1,0 +1,21 @@
+## Lightweight Docker Registry v2 — run this once on any machine on your LAN.
+## Both your dev machine and the Pi can push/pull from it.
+##
+## Start:  docker compose -f docker-compose.registry.yml up -d
+## Stop:   docker compose -f docker-compose.registry.yml down
+##
+## Images are stored in ./registry-data (survives restarts).
+## Access:  http://<host-ip>:5000/v2/_catalog
+
+services:
+  registry:
+    image: registry:2
+    container_name: docker-registry
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Keep all layers; disable garbage collection for simplicity.
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+    volumes:
+      - ./registry-data:/var/lib/registry

@@ -1,0 +1,9 @@
+http:
+  routers:
+    traefik-dashboard:
+      rule: "Host(`traefik.deputy.nl`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      entryPoints:
+        - websecure
+      service: api@internal  # This is a special built-in service
+      tls:
+        certResolver: cf-dns

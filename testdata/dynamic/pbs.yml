@@ -1,0 +1,21 @@
+http:
+  serversTransports:
+    insecure-skip:
+      insecureSkipVerify: true
+
+  routers:
+    pbs:
+      rule: "Host(`pbs.deputy.nl`)"
+      entryPoints:
+        - websecure
+      service: pbs-svc
+      tls:
+        certResolver: cf-dns
+
+  services:
+    pbs-svc:
+      loadBalancer:
+        serversTransport: insecure-skip
+        servers:
+          - url: "https://10.1.1.7:8007"
+        passHostHeader: true

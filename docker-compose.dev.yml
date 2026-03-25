@@ -1,0 +1,22 @@
+services:
+  traefik-gui:
+    build: .
+    ports:
+      - "8888:8888"
+    environment:
+      # Point to your traefik static config
+      TRAEFIK_CONFIG_PATH: /etc/traefik/traefik.yml
+      # Traefik API — adjust to match your setup
+      TRAEFIK_API_URL: http://traefik:8080
+      TRAEFIK_GUI_PORT: "8888"
+    volumes:
+      # Mount your traefik config directory (read + write)
+      - /etc/traefik:/etc/traefik
+    # Attach to the same Docker network as Traefik so the API is reachable
+    networks:
+      - traefik
+    restart: unless-stopped
+
+networks:
+  traefik:
+    external: true

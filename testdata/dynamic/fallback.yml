@@ -1,0 +1,22 @@
+http:
+  routers:
+    fallback-to-main:
+      rule: HostRegexp(`^.+\.deputy\.nl$`)
+      entryPoints:
+        - web
+        - websecure
+      service: main-fallback-svc
+      priority: 1
+      tls:
+        certResolver: cf-dns
+        domains:
+          - main: "deputy.nl"
+            sans:
+              - "*.deputy.nl"
+
+  services:
+    main-fallback-svc:
+      loadBalancer:
+        servers:
+          - url: "http://10.1.1.8:80"
+        passHostHeader: true
