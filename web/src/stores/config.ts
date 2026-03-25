@@ -68,6 +68,11 @@ export interface CertResolver {
   acme?: ACMEConfig
 }
 
+export interface AccessLogConfig {
+  filePath?: string
+  format?: string
+}
+
 export interface StaticConfig {
   api?: { dashboard?: boolean; insecure?: boolean; debug?: boolean }
   entryPoints?: Record<string, EntryPoint>
@@ -77,7 +82,7 @@ export interface StaticConfig {
   }
   certificatesResolvers?: Record<string, CertResolver>
   log?: { level?: string; filePath?: string; format?: string }
-  accessLog?: Record<string, unknown> | null
+  accessLog?: AccessLogConfig | null
   global?: { checkNewVersion?: boolean; sendAnonymousUsage?: boolean }
 }
 

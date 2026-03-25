@@ -246,14 +246,43 @@
 
         <!-- Logging -->
         <Section title="Logging">
-          <div class="space-y-3">
+          <div class="space-y-4">
             <div>
               <label class="field-label">Log level</label>
               <select v-model="form.logLevel" class="input">
                 <option v-for="l in ['DEBUG', 'INFO', 'WARN', 'ERROR']" :key="l" :value="l">{{ l }}</option>
               </select>
             </div>
-            <Toggle v-model="form.accessLog" label="Enable access log" small />
+
+            <div class="border-t border-slate-700 pt-4">
+              <Toggle v-model="form.accessLogEnabled" label="Enable access log" small />
+              <div v-if="form.accessLogEnabled" class="mt-3 space-y-3 pl-1">
+                <div>
+                  <label class="field-label">File path</label>
+                  <input v-model="form.accessLogPath" type="text" class="input w-full"
+                    placeholder="/var/log/traefik/access.log" />
+                  <p class="text-xs text-slate-500 mt-1">
+                    Leave blank to log to stdout (Activity view requires a file path).
+                  </p>
+                </div>
+                <div>
+                  <label class="field-label">Format</label>
+                  <div class="flex gap-2 mt-1.5">
+                    <label v-for="fmt in ['common', 'json']" :key="fmt"
+                      class="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border text-sm transition-colors"
+                      :class="form.accessLogFormat === fmt
+                        ? 'border-sky-600 bg-sky-900/20 text-sky-300'
+                        : 'border-slate-700 text-slate-400 hover:border-slate-600'">
+                      <input v-model="form.accessLogFormat" type="radio" :value="fmt" class="sr-only" />
+                      {{ fmt === 'common' ? 'CLF (common)' : 'JSON' }}
+                    </label>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-1.5">
+                    JSON gives richer filtering in the Activity view.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </Section>
 
@@ -333,7 +362,9 @@ const form = reactive({
   fileWatch: true,
   certResolvers: [] as CRForm[],
   logLevel: 'INFO',
-  accessLog: false,
+  accessLogEnabled: false,
+  accessLogPath: '',
+  accessLogFormat: 'common' as 'common' | 'json',
   checkNewVersion: false,
   sendAnonymousUsage: false,
 })
@@ -381,7 +412,9 @@ function populateForm(cfg: StaticConfig) {
   })
 
   form.logLevel = cfg.log?.level ?? 'INFO'
-  form.accessLog = cfg.accessLog !== undefined && cfg.accessLog !== null
+  form.accessLogEnabled = cfg.accessLog !== undefined && cfg.accessLog !== null
+  form.accessLogPath = cfg.accessLog?.filePath ?? ''
+  form.accessLogFormat = (cfg.accessLog?.format === 'json' ? 'json' : 'common')
   form.checkNewVersion = cfg.global?.checkNewVersion ?? false
   form.sendAnonymousUsage = cfg.global?.sendAnonymousUsage ?? false
 }
@@ -451,7 +484,11 @@ function buildConfig(): StaticConfig {
   }
 
   cfg.log = { level: form.logLevel }
-  if (form.accessLog) cfg.accessLog = {}
+  if (form.accessLogEnabled) {
+    cfg.accessLog = {}
+    if (form.accessLogPath) cfg.accessLog.filePath = form.accessLogPath
+    if (form.accessLogFormat !== 'common') cfg.accessLog.format = form.accessLogFormat
+  }
 
   if (form.checkNewVersion || form.sendAnonymousUsage) {
     cfg.global = {

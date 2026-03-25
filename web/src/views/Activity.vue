@@ -27,14 +27,17 @@
       </div>
 
       <!-- Not available -->
-      <div v-if="!available && streamState !== 'connecting'" class="card mb-4">
-        <p class="text-slate-300 font-medium mb-2">{{ unavailableReason }}</p>
-        <p class="text-slate-500 text-sm mb-3">
-          Add a <code class="text-sky-400">filePath</code> to your access log configuration so Traefik writes to a file instead of stdout:
-        </p>
-        <pre class="bg-slate-900 rounded-lg px-4 py-3 text-xs font-mono text-slate-300">accessLog:
-  filePath: /var/log/traefik/access.log
-  format: json   # json gives richer filtering; omit for CLF</pre>
+      <div v-if="!available && streamState !== 'connecting'" class="card mb-4 flex items-start gap-4">
+        <svg class="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="text-slate-300 font-medium">{{ unavailableReason }}</p>
+          <p class="text-slate-500 text-sm mt-1">
+            Enable the access log and set a file path in
+            <router-link to="/static" class="text-sky-400 hover:text-sky-300 transition-colors">Static Config → Logging</router-link>.
+          </p>
+        </div>
       </div>
 
       <!-- Filter bar -->
