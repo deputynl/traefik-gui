@@ -98,8 +98,8 @@
       <div class="space-y-1">
         <PathRow label="Static Config" :path="configStore.appConfig.paths.staticConfig"
           :found="configStore.appConfig.paths.staticConfigFound" />
-        <PathRow label="Dynamic Dir"  :path="configStore.appConfig.paths.dynamicDir" />
-        <PathRow label="ACME Storage" :path="configStore.appConfig.paths.acmePath" />
+        <PathRow label="Dynamic Dir"  :path="configStore.appConfig.paths.dynamicDir"  :found="configStore.appConfig.paths.dynamicDirFound" />
+        <PathRow label="ACME Storage" :path="configStore.appConfig.paths.acmePath"   :found="configStore.appConfig.paths.acmePathFound" />
         <PathRow label="Traefik API"  :path="configStore.appConfig.traefikApiUrl" />
       </div>
     </div>

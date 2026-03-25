@@ -38,17 +38,16 @@ func Load() *AppConfig {
 // ResolvedPaths contains the file/directory paths discovered from traefik.yml
 // (or the defaults when no config file is found).
 type ResolvedPaths struct {
-	StaticConfig string `json:"staticConfig"`
-	DynamicDir   string `json:"dynamicDir"`
-	AcmePath     string `json:"acmePath"`
-	// Whether the static config file was actually found on disk.
-	StaticConfigFound bool `json:"staticConfigFound"`
+	StaticConfig      string `json:"staticConfig"`
+	DynamicDir        string `json:"dynamicDir"`
+	AcmePath          string `json:"acmePath"`
+	StaticConfigFound bool   `json:"staticConfigFound"`
+	DynamicDirFound   bool   `json:"dynamicDirFound"`
+	AcmePathFound     bool   `json:"acmePathFound"`
 }
 
 // Resolve determines the dynamic dir and acme path from the static config path.
 // It uses defaults if the file does not exist or the relevant fields are empty.
-// The traefik parser fills in DynamicDir and AcmePath; this function only
-// populates the base fields so callers always get a valid struct.
 func Resolve(staticConfigPath string) *ResolvedPaths {
 	rp := &ResolvedPaths{
 		StaticConfig: staticConfigPath,
@@ -62,6 +61,14 @@ func Resolve(staticConfigPath string) *ResolvedPaths {
 		dir := filepath.Dir(staticConfigPath)
 		rp.DynamicDir = filepath.Join(dir, "dynamic")
 		rp.AcmePath = filepath.Join(dir, "acme.json")
+	}
+
+	// Check existence of dynamic dir and acme.json independently.
+	if info, err := os.Stat(rp.DynamicDir); err == nil && info.IsDir() {
+		rp.DynamicDirFound = true
+	}
+	if _, err := os.Stat(rp.AcmePath); err == nil {
+		rp.AcmePathFound = true
 	}
 
 	return rp
