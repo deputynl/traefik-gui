@@ -38,7 +38,7 @@ func Load() *AppConfig {
 		GUIUser:              envOr("TRAEFIK_GUI_USER", DefaultUser),
 		GUIPassword:          envOr("TRAEFIK_GUI_PASSWORD", DefaultPassword),
 		AcmePathOverride:     os.Getenv("TRAEFIK_ACME_PATH"),
-		TraefikContainerName: os.Getenv("TRAEFIK_CONTAINER_NAME"),
+		TraefikContainerName: envOr("TRAEFIK_CONTAINER_NAME", "traefik"),
 	}
 }
 
