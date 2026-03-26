@@ -6,6 +6,22 @@ A lightweight web-based management interface for [Traefik](https://traefik.io/) 
 
 ---
 
+## Screenshots
+
+| Dashboard | Certificates |
+|-----------|--------------|
+| ![Dashboard](docs/screenshots/01-dashboard.png) | ![Certificates](docs/screenshots/04-certificates.png) |
+
+| Dynamic Config | Activity Log |
+|----------------|--------------|
+| ![Dynamic Config](docs/screenshots/03-dynamic-config.png) | ![Activity](docs/screenshots/06-activity.png) |
+
+| mTLS | Audit Log |
+|------|-----------|
+| ![mTLS](docs/screenshots/07-mtls.png) | ![Audit Log](docs/screenshots/08-audit-log.png) |
+
+---
+
 ## Features
 
 - **Dashboard** — live Traefik connection status and resolved config paths
