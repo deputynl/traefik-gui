@@ -128,6 +128,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/dynamic/{file}", s.handleDynamicFile)
 	s.mux.HandleFunc("/api/certificates", s.handleGetCerts)
 	s.mux.HandleFunc("/api/docker", s.handleGetDocker)
+	s.mux.HandleFunc("POST /api/traefik/restart", s.handleRestartTraefik)
 	s.mux.HandleFunc("/api/audit", s.handleGetAudit)
 	s.mux.HandleFunc("/api/accesslog", s.handleAccessLogRecent)
 	s.mux.HandleFunc("/api/accesslog/stream", s.handleAccessLogStream)

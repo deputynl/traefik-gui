@@ -8,13 +8,27 @@
           <span class="path-chip">{{ store.appConfig?.paths.staticConfig ?? '…' }}</span>
         </p>
       </div>
-      <button class="btn btn-primary flex-shrink-0" :disabled="store.saving || store.loading" @click="save">
-        <svg v-if="store.saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-        </svg>
-        {{ store.saving ? 'Saving…' : 'Save' }}
-      </button>
+      <div class="flex gap-2 flex-shrink-0">
+        <button class="btn btn-secondary flex items-center gap-1.5" :disabled="restarting" @click="restart"
+          title="Restart Traefik container">
+          <svg v-if="restarting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          {{ restarting ? 'Restarting…' : 'Restart Traefik' }}
+        </button>
+        <button class="btn btn-primary" :disabled="store.saving || store.loading" @click="save">
+          <svg v-if="store.saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+          {{ store.saving ? 'Saving…' : 'Save' }}
+        </button>
+      </div>
     </div>
 
     <!-- Not found notice -->
@@ -299,6 +313,7 @@ const store = useConfigStore()
 const tab = ref<'form' | 'yaml'>('form')
 const rawContent = ref('')
 const saveMsg = ref<{ ok: boolean; text: string } | null>(null)
+const restarting = ref(false)
 const warnings = ref<Array<{ field: string; message: string }>>([])
 
 let _idCounter = 0
@@ -485,6 +500,24 @@ function addCertResolver() {
     _id: uid(), name: '', email: '', storage: '/acme.json',
     challengeType: 'dns', httpEntryPoint: 'web', dnsProvider: '', dnsResolversStr: '',
   })
+}
+
+async function restart() {
+  restarting.value = true
+  try {
+    const res = await fetch('/api/traefik/restart', { method: 'POST' })
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}))
+      saveMsg.value = { ok: false, text: j.error ?? 'Restart failed.' }
+    } else {
+      saveMsg.value = { ok: true, text: 'Traefik is restarting…' }
+      setTimeout(() => { saveMsg.value = null }, 4000)
+    }
+  } catch {
+    saveMsg.value = { ok: false, text: 'Restart request failed.' }
+  } finally {
+    restarting.value = false
+  }
 }
 
 async function save() {

@@ -29,6 +29,27 @@ var sockClient = &http.Client{
 	},
 }
 
+// RestartContainer sends a restart signal to the named container.
+func RestartContainer(name string) error {
+	req, err := http.NewRequest(http.MethodPost,
+		fmt.Sprintf("http://docker/v1.41/containers/%s/restart", name), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := sockClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("docker restart: %w", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("container %q not found", name)
+	}
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("docker restart returned %s", resp.Status)
+	}
+	return nil
+}
+
 // Available returns true if the Docker socket is accessible.
 func Available() bool {
 	resp, err := sockClient.Get("http://docker/v1.41/_ping")
