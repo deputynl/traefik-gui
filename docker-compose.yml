@@ -12,6 +12,9 @@ services:
       # the files are mounted here (e.g. acme.json stored at /acme.json in Traefik).
       TRAEFIK_ACME_PATH: /etc/traefik/acme.json
       # TRAEFIK_ACCESS_LOG_PATH: /var/log/traefik/access.log
+      # Stream access logs from the Traefik container's stdout instead of a file.
+      # Set to your Traefik container name (e.g. "traefik") to enable Docker-log mode.
+      TRAEFIK_CONTAINER_NAME: traefik
     volumes:
       # Mount your Traefik config directory (read + write so the GUI can save changes).
       - /etc/traefik:/etc/traefik

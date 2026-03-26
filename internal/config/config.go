@@ -26,6 +26,10 @@ type AppConfig struct {
 	// different path inside this container than in the Traefik container.
 	AcmePathOverride      string
 	AccessLogPathOverride string
+	// TraefikContainerName enables Docker-log streaming mode: access logs are
+	// read from the named container's stdout/stderr via the Docker socket
+	// instead of from a file. Leave empty to use file-based mode.
+	TraefikContainerName string
 }
 
 // Load reads environment variables and returns the app config.
@@ -38,6 +42,7 @@ func Load() *AppConfig {
 		GUIPassword:           envOr("TRAEFIK_GUI_PASSWORD", DefaultPassword),
 		AcmePathOverride:      os.Getenv("TRAEFIK_ACME_PATH"),
 		AccessLogPathOverride: os.Getenv("TRAEFIK_ACCESS_LOG_PATH"),
+		TraefikContainerName:  os.Getenv("TRAEFIK_CONTAINER_NAME"),
 	}
 }
 
