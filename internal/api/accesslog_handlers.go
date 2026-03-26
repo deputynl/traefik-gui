@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -46,6 +45,7 @@ func (s *Server) handleAccessLogRecent(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleAccessLogStream streams new log lines from the container's stdout via SSE.
+// Uses a 500ms poll loop so the connection is always responsive and works through proxies.
 func (s *Server) handleAccessLogStream(w http.ResponseWriter, r *http.Request) {
 	if s.cfg.TraefikContainerName == "" {
 		http.Error(w, "TRAEFIK_CONTAINER_NAME is not set", http.StatusServiceUnavailable)
@@ -62,46 +62,50 @@ func (s *Server) handleAccessLogStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
-	// Flush headers immediately so the browser sees the 200 and fires onopen.
+	// Write and flush immediately so the browser receives the 200 and fires onopen.
 	fmt.Fprint(w, ": connected\n\n")
 	flusher.Flush()
 
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
-
-	lines := make(chan string, 64)
-	errCh := make(chan error, 1)
-
-	go func() {
-		errCh <- docker.StreamContainerLogs(ctx, s.cfg.TraefikContainerName, lines)
-	}()
-
-	keepalive := time.NewTicker(15 * time.Second)
+	poll := time.NewTicker(500 * time.Millisecond)
+	defer poll.Stop()
+	keepalive := time.NewTicker(10 * time.Second)
 	defer keepalive.Stop()
+
+	since := time.Now()
+	name := s.cfg.TraefikContainerName
 
 	for {
 		select {
 		case <-r.Context().Done():
 			return
+
 		case <-keepalive.C:
 			fmt.Fprint(w, ": keepalive\n\n")
 			flusher.Flush()
-		case line, open := <-lines:
-			if !open {
+
+		case t := <-poll.C:
+			lines, err := docker.ContainerLogLinesSince(name, since)
+			if err != nil {
 				return
 			}
-			e, ok := accesslog.ParseLine(line)
-			if !ok {
-				continue
+			since = t
+
+			sent := false
+			for _, line := range lines {
+				e, ok := accesslog.ParseLine(line)
+				if !ok {
+					continue
+				}
+				data, err := json.Marshal(e)
+				if err != nil {
+					continue
+				}
+				fmt.Fprintf(w, "data: %s\n\n", data)
+				sent = true
 			}
-			data, err := json.Marshal(e)
-			if err != nil {
-				continue
+			if sent {
+				flusher.Flush()
 			}
-			fmt.Fprintf(w, "data: %s\n\n", data)
-			flusher.Flush()
-		case <-errCh:
-			return
 		}
 	}
 }
