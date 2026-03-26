@@ -5,7 +5,7 @@
       <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="text-2xl font-bold text-slate-100">Activity</h1>
-          <p class="text-slate-400 mt-1 text-sm">Live access log stream via Docker</p>
+          <p class="text-slate-400 mt-1 text-sm">Access log · refreshes every 3 seconds</p>
         </div>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-1.5 text-xs text-slate-400 mr-2">
@@ -239,29 +239,7 @@ const selectedEntry = computed(() =>
   selected.value !== null ? filtered.value[selected.value] ?? null : null
 )
 
-let es: EventSource | null = null
-
-function startStream() {
-  streamState.value = 'connecting'
-  es = new EventSource('/api/accesslog/stream')
-  es.onopen = () => { streamState.value = 'connected' }
-  es.onmessage = (event) => {
-    if (paused.value) return
-    try {
-      const entry: LogEntry = JSON.parse(event.data)
-      entries.value.unshift(entry)
-      if (entries.value.length > MAX_ENTRIES) entries.value.length = MAX_ENTRIES
-      // Shift selection index to follow the entry.
-      if (selected.value !== null) selected.value++
-    } catch { /* ignore */ }
-  }
-  es.onerror = () => {
-    streamState.value = 'error'
-    available.value = false
-    unavailableReason.value = 'Could not connect to access log stream.'
-    es?.close()
-  }
-}
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 async function loadRecent() {
   try {
@@ -275,10 +253,34 @@ async function loadRecent() {
       return
     }
     entries.value = data.entries ?? []
-    startStream()
+    streamState.value = 'connected'
+    startPolling()
   } catch {
     streamState.value = 'error'
   }
+}
+
+function startPolling() {
+  if (pollTimer !== null) return
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch('/api/accesslog')
+      if (!res.ok) return
+      const data = await res.json()
+      if (!data.available) return
+      const incoming: LogEntry[] = data.entries ?? []
+      if (!incoming.length || paused.value) return
+      // Find entries newer than what we already have.
+      const newestKnown = entries.value[0]?.time ?? null
+      const newEntries = newestKnown
+        ? incoming.filter(e => e.time > newestKnown)
+        : incoming
+      if (!newEntries.length) return
+      entries.value.unshift(...newEntries)
+      if (entries.value.length > MAX_ENTRIES) entries.value.length = MAX_ENTRIES
+      if (selected.value !== null) selected.value += newEntries.length
+    } catch { /* ignore */ }
+  }, 3000)
 }
 
 function togglePause() { paused.value = !paused.value }
@@ -318,7 +320,7 @@ function methodColor(method: string) {
 }
 
 onMounted(() => loadRecent())
-onUnmounted(() => es?.close())
+onUnmounted(() => { if (pollTimer !== null) clearInterval(pollTimer) })
 </script>
 
 <style scoped>
