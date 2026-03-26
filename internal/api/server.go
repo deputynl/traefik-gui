@@ -86,19 +86,13 @@ func (s *Server) refreshPaths() {
 			log.Printf("warn: parsing traefik config for path resolution: %v", err)
 		} else {
 			rp.DynamicDir, rp.AcmePath = traefik.ResolvePaths(s.cfg.TraefikConfigPath, cfg)
-			if cfg.AccessLog != nil && cfg.AccessLog.FilePath != "" {
-				rp.AccessLogPath = cfg.AccessLog.FilePath
-			}
 		}
 	}
 
-	// Env var overrides take precedence over everything — useful when the path
-	// inside this container differs from the path inside the Traefik container.
+	// Env var override takes precedence — useful when acme.json is mounted at
+	// a different path inside this container than the Traefik container.
 	if s.cfg.AcmePathOverride != "" {
 		rp.AcmePath = s.cfg.AcmePathOverride
-	}
-	if s.cfg.AccessLogPathOverride != "" {
-		rp.AccessLogPath = s.cfg.AccessLogPathOverride
 	}
 
 	// Re-check existence after paths may have been overridden.

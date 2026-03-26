@@ -101,8 +101,6 @@
         <PathRow label="Dynamic Dir"  :path="configStore.appConfig.paths.dynamicDir"  :found="configStore.appConfig.paths.dynamicDirFound" />
         <PathRow label="ACME Storage" :path="configStore.appConfig.paths.acmePath"   :found="configStore.appConfig.paths.acmePathFound" />
         <PathRow label="Traefik API"  :path="configStore.appConfig.traefikApiUrl" :found="traefik.online" />
-        <PathRow v-if="configStore.appConfig.paths.accessLogPath"
-          label="Access Log" :path="configStore.appConfig.paths.accessLogPath" :found="configStore.appConfig.paths.accessLogFound" />
       </div>
     </div>
 

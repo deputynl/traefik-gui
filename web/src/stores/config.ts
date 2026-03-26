@@ -5,11 +5,9 @@ export interface ResolvedPaths {
   staticConfig: string
   dynamicDir: string
   acmePath: string
-  accessLogPath: string
   staticConfigFound: boolean
   dynamicDirFound: boolean
   acmePathFound: boolean
-  accessLogFound: boolean
 }
 
 export interface ValidationWarning {
@@ -68,11 +66,6 @@ export interface CertResolver {
   acme?: ACMEConfig
 }
 
-export interface AccessLogConfig {
-  filePath?: string
-  format?: string
-}
-
 export interface StaticConfig {
   api?: { dashboard?: boolean; insecure?: boolean; debug?: boolean }
   entryPoints?: Record<string, EntryPoint>
@@ -82,7 +75,7 @@ export interface StaticConfig {
   }
   certificatesResolvers?: Record<string, CertResolver>
   log?: { level?: string; filePath?: string; format?: string }
-  accessLog?: AccessLogConfig | null
+  accessLog?: { format?: string } | null
   global?: { checkNewVersion?: boolean; sendAnonymousUsage?: boolean }
 }
 

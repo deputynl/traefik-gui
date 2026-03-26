@@ -5,12 +5,7 @@
       <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="text-2xl font-bold text-slate-100">Activity</h1>
-          <p class="text-slate-400 mt-1 text-sm">
-            Live access log stream
-            <span v-if="configStore.appConfig?.paths.accessLogPath" class="font-mono text-slate-500">
-              · {{ configStore.appConfig.paths.accessLogPath }}
-            </span>
-          </p>
+          <p class="text-slate-400 mt-1 text-sm">Live access log stream via Docker</p>
         </div>
         <div class="flex items-center gap-2">
           <div class="flex items-center gap-1.5 text-xs text-slate-400 mr-2">
@@ -163,7 +158,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, defineComponent, h } from 'vue'
-import { useConfigStore } from '@/stores/config'
 
 interface LogEntry {
   time: string
@@ -199,7 +193,6 @@ const DetailRow = defineComponent({
   },
 })
 
-const configStore = useConfigStore()
 const entries = ref<LogEntry[]>([])
 const paused = ref(false)
 const search = ref('')
