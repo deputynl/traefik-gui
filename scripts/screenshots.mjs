@@ -20,7 +20,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const OUT_DIR = path.join(__dirname, '..', 'docs', 'screenshots')
+const OUT_DIR = path.join(__dirname, '..', 'docs', 'img')
 const APP_URL = process.env.APP_URL ?? 'http://localhost:8888'
 
 // ── Mock data ────────────────────────────────────────────────────────────────
