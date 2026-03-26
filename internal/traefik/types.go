@@ -57,7 +57,7 @@ type Providers struct {
 
 type DockerProvider struct {
 	Endpoint         string `yaml:"endpoint,omitempty"         json:"endpoint,omitempty"`
-	ExposedByDefault bool   `yaml:"exposedByDefault,omitempty" json:"exposedByDefault,omitempty"`
+	ExposedByDefault bool   `yaml:"exposedByDefault" json:"exposedByDefault"`
 	Network          string `yaml:"network,omitempty"          json:"network,omitempty"`
 	Watch            bool   `yaml:"watch,omitempty"            json:"watch,omitempty"`
 }

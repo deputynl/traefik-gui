@@ -15,6 +15,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"software.sslmate.com/src/go-pkcs12"
 )
 
 var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
@@ -90,6 +92,19 @@ func (s *Store) IssueClient(name string) (ClientEntry, error) {
 	pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 	keyFile.Close()
 
+	// Write PKCS#12 bundle (cert + key, no password) for browser import.
+	clientCert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return ClientEntry{}, err
+	}
+	p12Data, err := pkcs12.Modern.Encode(key, clientCert, nil, "")
+	if err != nil {
+		return ClientEntry{}, err
+	}
+	if err := os.WriteFile(s.clientP12Path(id), p12Data, 0600); err != nil {
+		return ClientEntry{}, err
+	}
+
 	entry := ClientEntry{ID: id, Name: name, Issued: now, Expires: expires}
 	if err := s.AddClient(entry); err != nil {
 		return ClientEntry{}, err
@@ -97,8 +112,8 @@ func (s *Store) IssueClient(name string) (ClientEntry, error) {
 	return entry, nil
 }
 
-// WriteClientZip writes a ZIP archive containing ca.crt, client.crt, client.key
-// and a README to the provided writer.
+// WriteClientZip writes a ZIP archive containing ca.crt, client.crt, client.key,
+// client.p12 and a README to the provided writer.
 func (s *Store) WriteClientZip(id string, w io.Writer) error {
 	caCertPEM, err := os.ReadFile(s.CACertPath())
 	if err != nil {
@@ -112,34 +127,41 @@ func (s *Store) WriteClientZip(id string, w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("reading client key: %w", err)
 	}
+	clientP12, err := os.ReadFile(s.clientP12Path(id))
+	if err != nil {
+		return fmt.Errorf("reading client p12: %w", err)
+	}
 
 	readme := `mTLS Client Certificate
 ========================
 
 Files in this archive:
   ca.crt      - Certificate Authority (trust this in your browser/OS)
-  client.crt  - Your client certificate
-  client.key  - Your client private key (keep this secret)
+  client.crt  - Your client certificate (PEM, for curl / advanced use)
+  client.key  - Your client private key (PEM, keep this secret)
+  client.p12  - Certificate + key bundle for browser import (no password)
 
 Installation instructions:
 
-macOS:
-  1. Double-click ca.crt → add to Keychain → mark as "Always Trust"
-  2. Combine into PKCS#12: openssl pkcs12 -export -in client.crt -inkey client.key -out client.p12
-  3. Double-click client.p12 to import into Keychain
-
-Windows:
-  1. Double-click ca.crt → Install Certificate → Local Machine → Trusted Root CAs
-  2. Run: certutil -importpfx client.p12  (after creating it with the openssl command above)
-
 Firefox:
   Settings → Privacy & Security → Certificates → View Certificates
-  → Authorities tab → Import ca.crt
+  → Authorities tab  → Import ca.crt
   → Your Certificates tab → Import client.p12
+
+macOS (Safari / Chrome):
+  1. Double-click ca.crt → add to Keychain → mark as "Always Trust"
+  2. Double-click client.p12 to import into Keychain
+
+Windows (Edge / Chrome):
+  1. Double-click ca.crt → Install Certificate → Local Machine → Trusted Root CAs
+  2. Double-click client.p12 → import into Personal store
 
 Linux (Chrome/Chromium):
   Settings → Privacy and security → Security → Manage certificates
   Import ca.crt as Authority, client.p12 as Your certificates
+
+curl:
+  curl --cert client.crt --key client.key --cacert ca.crt https://your-host/
 `
 
 	zw := zip.NewWriter(w)
@@ -152,6 +174,7 @@ Linux (Chrome/Chromium):
 		{"ca.crt", caCertPEM},
 		{"client.crt", clientCertPEM},
 		{"client.key", clientKeyPEM},
+		{"client.p12", clientP12},
 		{"README.txt", []byte(readme)},
 	} {
 		fw, err := zw.Create(f.name)

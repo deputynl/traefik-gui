@@ -24,7 +24,7 @@
           </div>
           <div>
             <div class="text-sm font-semibold text-slate-100 leading-tight">Traefik GUI</div>
-            <div class="text-xs text-slate-500 leading-tight">v0.1.0</div>
+            <div class="text-xs text-slate-500 leading-tight">v1.1.0</div>
           </div>
         </div>
       </div>

@@ -36,6 +36,9 @@ func (s *Store) clientCertPath(id string) string {
 func (s *Store) clientKeyPath(id string) string {
 	return filepath.Join(s.clientDir(), id+".key")
 }
+func (s *Store) clientP12Path(id string) string {
+	return filepath.Join(s.clientDir(), id+".p12")
+}
 
 // CAExists returns true if both ca.crt and ca.key are present.
 func (s *Store) CAExists() bool {
@@ -95,11 +98,16 @@ func (s *Store) RemoveClient(id string) error {
 	}
 	_ = os.Remove(s.clientCertPath(id))
 	_ = os.Remove(s.clientKeyPath(id))
+	_ = os.Remove(s.clientP12Path(id))
 	return nil
 }
 
 func (s *Store) ensureDirs() error {
-	if err := os.MkdirAll(s.dir, 0700); err != nil {
+	if err := os.MkdirAll(s.dir, 0755); err != nil {
+		return err
+	}
+	// Ensure existing directories have the correct permissions.
+	if err := os.Chmod(s.dir, 0755); err != nil {
 		return err
 	}
 	return os.MkdirAll(s.clientDir(), 0700)

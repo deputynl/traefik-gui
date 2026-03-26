@@ -24,7 +24,7 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik-gui.rule=Host(`traefik-gui.deputy.nl`)"
+      - "traefik.http.routers.traefik-gui.rule=Host(`traefik-gui.yourdomain.org`)"
       - "traefik.http.routers.traefik-gui.entrypoints=websecure"
       - "traefik.http.routers.traefik-gui.tls.certresolver=cf-dns"
       - "traefik.http.services.traefik-gui.loadbalancer.server.port=8888"

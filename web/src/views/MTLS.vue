@@ -115,7 +115,7 @@
         <h3 class="text-sm font-semibold text-slate-200 mb-4">Issue client certificate</h3>
         <label class="field-label">Name</label>
         <input v-model="newCertName" type="text" class="input w-full mb-4"
-          placeholder="e.g. Michel's laptop" @keydown.enter="issueClient" />
+          placeholder="e.g. My laptop" @keydown.enter="issueClient" />
         <div class="flex gap-2 justify-end">
           <button class="btn btn-secondary text-xs" @click="showIssue = false">Cancel</button>
           <button class="btn btn-primary text-xs" :disabled="!newCertName.trim() || issueLoading"
@@ -203,16 +203,27 @@ async function applyTLS() {
 
 async function issueClient() {
   if (!newCertName.value.trim()) return
+  const name = newCertName.value.trim()
   issueLoading.value = true
   try {
-    const res = await fetch('/api/mtls/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newCertName.value.trim() }),
-    })
-    if (!res.ok) throw new Error((await res.json()).error)
-    const entry: ClientEntry = await res.json()
-    // Trigger download immediately.
+    let entry: ClientEntry | null = null
+    try {
+      const res = await fetch('/api/mtls/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (!res.ok) throw new Error((await res.json()).error)
+      entry = await res.json()
+    } catch (fetchErr) {
+      // Network error (e.g. connection dropped through proxy during generation).
+      // The cert may have been created anyway — check by refreshing the list.
+      await fetchStatus()
+      const created = status.value?.clients.find(c => c.name === name)
+      if (!created) throw fetchErr
+      entry = created
+    }
+    // Trigger download.
     const a = document.createElement('a')
     a.href = `/api/mtls/clients/${entry.id}/download`
     a.click()

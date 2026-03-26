@@ -17,7 +17,7 @@
           </svg>
           <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0f01-15.357-2m15.357 2H15"/>
           </svg>
           {{ restarting ? 'Restarting…' : 'Restart Traefik' }}
         </button>
@@ -139,7 +139,7 @@
                 <div class="flex-1">
                   <Toggle v-model="ep.requireMtls" label="Require mTLS" small />
                   <p v-if="ep.requireMtls" class="text-xs text-slate-500 mt-1.5 pl-1">
-                    Sets <span class="font-mono">tls.options: mtls</span> on this entry point.
+                    Sets <span class="font-mono">tls.options: mtls@file</span> on this entry point.
                   </p>
                 </div>
                 <router-link to="/mtls" class="text-xs text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap mt-0.5">
@@ -284,8 +284,8 @@
             <div class="border-t border-slate-700 pt-4">
               <Toggle v-model="form.accessLogEnabled" label="Enable access log" small />
               <p v-if="form.accessLogEnabled" class="text-xs text-slate-500 mt-2 pl-1">
-                Traefik will log to stdout. The Activity view streams logs directly
-                from the container via the Docker socket.
+                Traefik will log to stdout in JSON format. The Activity view streams
+                logs directly from the container via the Docker socket.
               </p>
             </div>
           </div>
@@ -386,7 +386,7 @@ function populateForm(cfg: StaticConfig) {
     redirectTo: ep.http?.redirections?.entryPoint?.to ?? '',
     redirectScheme: ep.http?.redirections?.entryPoint?.scheme ?? 'https',
     redirectPermanent: ep.http?.redirections?.entryPoint?.permanent ?? true,
-    requireMtls: ep.http?.tls?.options === 'mtls',
+    requireMtls: ep.http?.tls?.options === 'mtls@file' || ep.http?.tls?.options === 'mtls',
   }))
 
   const docker = cfg.providers?.docker
@@ -446,7 +446,7 @@ function buildConfig(): StaticConfig {
           }
         }
         if (ep.requireMtls) {
-          entry.http.tls = { options: 'mtls' }
+          entry.http.tls = { options: 'mtls@file' }
         }
       }
       cfg.entryPoints[ep.name] = entry
@@ -494,7 +494,7 @@ function buildConfig(): StaticConfig {
 
   cfg.log = { level: form.logLevel }
   if (form.accessLogEnabled) {
-    cfg.accessLog = {}
+    cfg.accessLog = { format: 'json' }
   }
 
   if (form.checkNewVersion || form.sendAnonymousUsage) {
@@ -524,20 +524,41 @@ function addCertResolver() {
 
 async function restart() {
   restarting.value = true
+  saveMsg.value = { ok: true, text: 'Restarting Traefik…' }
   try {
     const res = await fetch('/api/traefik/restart', { method: 'POST' })
     if (!res.ok) {
-      const j = await res.json().catch(() => ({}))
-      saveMsg.value = { ok: false, text: j.error ?? 'Restart failed.' }
-    } else {
-      saveMsg.value = { ok: true, text: 'Traefik is restarting…' }
-      setTimeout(() => { saveMsg.value = null }, 4000)
+      // 502/503/504 mean Traefik is already shutting down — treat as success.
+      // Only bail out for application-level errors from traefik-gui itself.
+      if (res.status < 500 || res.status === 500) {
+        const j = await res.json().catch(() => ({}))
+        if (j.error) {
+          saveMsg.value = { ok: false, text: j.error }
+          restarting.value = false
+          return
+        }
+      }
     }
   } catch {
-    saveMsg.value = { ok: false, text: 'Restart request failed.' }
-  } finally {
-    restarting.value = false
+    // Connection dropped because Traefik restarted mid-request — expected.
   }
+  // Wait 20 s for Traefik to come back up, then do a single check.
+  saveMsg.value = { ok: true, text: 'Waiting for Traefik to come back…' }
+  await new Promise(r => setTimeout(r, 4_000))
+  try {
+    const ctrl = new AbortController()
+    setTimeout(() => ctrl.abort(), 3000)
+    const probe = await fetch('/api/status', { signal: ctrl.signal })
+    if (probe.ok) {
+      saveMsg.value = { ok: true, text: 'Traefik restarted successfully.' }
+      setTimeout(() => { saveMsg.value = null }, 4000)
+    } else {
+      saveMsg.value = { ok: false, text: 'Traefik may still be starting up — please check.' }
+    }
+  } catch {
+    saveMsg.value = { ok: false, text: 'Traefik did not respond after 20 s — please check.' }
+  }
+  restarting.value = false
 }
 
 async function save() {

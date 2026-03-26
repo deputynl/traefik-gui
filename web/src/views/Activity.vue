@@ -17,6 +17,13 @@
             {{ paused ? '▶ Resume' : '⏸ Pause' }}
           </button>
           <button class="btn-secondary text-xs" @click="clearEntries">Clear</button>
+          <button class="btn-secondary text-xs flex items-center gap-1.5 transition-colors"
+            :class="showSelf ? 'border-sky-600 bg-sky-600/20 text-sky-300' : ''"
+            @click="showSelf = !showSelf"
+            :title="'Toggle traffic from ' + selfHost">
+            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" :class="showSelf ? 'bg-sky-400' : 'bg-slate-600'" />
+            GUI traffic
+          </button>
         </div>
       </div>
 
@@ -202,6 +209,8 @@ const selected = ref<number | null>(null)
 const streamState = ref<'connecting' | 'connected' | 'error'>('connecting')
 const available = ref(true)
 const unavailableReason = ref('')
+const showSelf = ref(false)
+const selfHost = window.location.hostname
 const MAX_ENTRIES = 500
 
 const statusFilters = [
@@ -214,6 +223,8 @@ const statusFilters = [
 
 const filtered = computed(() => {
   let list = entries.value
+  if (!showSelf.value)
+    list = list.filter(e => e.host !== selfHost)
   if (statusFilter.value !== 'ALL')
     list = list.filter(e => String(e.status).startsWith(statusFilter.value))
   if (methodFilter.value !== 'ALL') {
