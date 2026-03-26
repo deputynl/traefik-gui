@@ -1,17 +1,29 @@
 REGISTRY  ?= ghcr.io/deputynl
 IMAGE     ?= traefik-gui
 TAG       ?= latest
+# VERSION is read from web/package.json if not supplied (e.g. VERSION=1.2.0 make release)
+VERSION   ?= $(shell node -p "require('./web/package.json').version" 2>/dev/null)
 
-.PHONY: build build-arm64 release login setup-builder
+.PHONY: build build-arm64 release tag login setup-builder
 
 # ── day-to-day ───────────────────────────────────────────────────────────────
 
-## Build + push multi-arch image (amd64 + arm64) to ghcr.io — use this for releases
+## Build + push multi-arch image (amd64 + arm64) to ghcr.io and create a git tag
 release:
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
 		--push \
-		-t $(REGISTRY)/$(IMAGE):$(TAG) .
+		-t $(REGISTRY)/$(IMAGE):$(TAG) \
+		-t $(REGISTRY)/$(IMAGE):$(VERSION) .
+	@$(MAKE) tag
+
+## Create and push a git tag for the current version (idempotent)
+tag:
+	@if git rev-parse "v$(VERSION)" >/dev/null 2>&1; then \
+		echo "Tag v$(VERSION) already exists — skipping."; \
+	else \
+		git tag "v$(VERSION)" && git push origin "v$(VERSION)" && echo "Tagged v$(VERSION)"; \
+	fi
 
 ## Build for the local machine only (no push, loads into docker daemon)
 build:
