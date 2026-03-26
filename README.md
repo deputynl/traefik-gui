@@ -10,15 +10,15 @@ A lightweight web-based management interface for [Traefik](https://traefik.io/) 
 
 | Dashboard | Certificates |
 |-----------|--------------|
-| ![Dashboard](docs/img/01-dashboard.png) | ![Certificates](docs/img/04-certificates.png) |
+| ![Dashboard](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/01-dashboard.png?raw=true) | ![Certificates](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/04-certificates.png?raw=true) |
 
 | Dynamic Config | Activity Log |
 |----------------|--------------|
-| ![Dynamic Config](docs/img/03-dynamic-config.png) | ![Activity](docs/img/06-activity.png) |
+| ![Dynamic Config](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/03-dynamic-config.png?raw=true) | ![Activity](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/06-activity.png?raw=true) |
 
 | mTLS | Audit Log |
 |------|-----------|
-| ![mTLS](docs/img/07-mtls.png) | ![Audit Log](docs/img/08-audit-log.png) |
+| ![mTLS](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/07-mtls.png?raw=true) | ![Audit Log](https://github.com/depuytnl/traefik-gui/blob/main/docs/img/08-audit-log.png?raw=true) |
 
 ---
 
