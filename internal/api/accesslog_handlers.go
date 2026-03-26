@@ -62,6 +62,9 @@ func (s *Server) handleAccessLogStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")
+	// Flush headers immediately so the browser sees the 200 and fires onopen.
+	fmt.Fprint(w, ": connected\n\n")
+	flusher.Flush()
 
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
