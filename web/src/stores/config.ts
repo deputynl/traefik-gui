@@ -27,6 +27,7 @@ export interface EntryPointHTTP {
   }
   tls?: {
     certResolver?: string
+    options?: string
   }
 }
 

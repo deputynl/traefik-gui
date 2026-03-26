@@ -132,6 +132,13 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("/api/audit", s.handleGetAudit)
 	s.mux.HandleFunc("/api/accesslog", s.handleAccessLogRecent)
 	s.mux.HandleFunc("/api/accesslog/stream", s.handleAccessLogStream)
+	s.mux.HandleFunc("GET /api/mtls", s.handleMTLSStatus)
+	s.mux.HandleFunc("POST /api/mtls/ca", s.handleMTLSGenerateCA)
+	s.mux.HandleFunc("GET /api/mtls/ca/download", s.handleMTLSDownloadCA)
+	s.mux.HandleFunc("POST /api/mtls/clients", s.handleMTLSIssueClient)
+	s.mux.HandleFunc("GET /api/mtls/clients/{id}/download", s.handleMTLSDownloadClient)
+	s.mux.HandleFunc("DELETE /api/mtls/clients/{id}", s.handleMTLSRevokeClient)
+	s.mux.HandleFunc("POST /api/mtls/apply", s.handleMTLSApply)
 	s.mux.HandleFunc("/api/traefik/", s.handleTraefikProxy)
 
 	// SPA fallback — serve index.html for all unknown paths.

@@ -133,6 +133,19 @@
                   <Toggle v-model="ep.redirectPermanent" label="Permanent (308)" small />
                 </div>
               </div>
+
+              <!-- mTLS -->
+              <div class="border-t border-slate-700/50 pt-3 flex items-start justify-between gap-4">
+                <div class="flex-1">
+                  <Toggle v-model="ep.requireMtls" label="Require mTLS" small />
+                  <p v-if="ep.requireMtls" class="text-xs text-slate-500 mt-1.5 pl-1">
+                    Sets <span class="font-mono">tls.options: mtls</span> on this entry point.
+                  </p>
+                </div>
+                <router-link to="/mtls" class="text-xs text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap mt-0.5">
+                  Manage mTLS →
+                </router-link>
+              </div>
             </div>
 
             <button class="btn btn-secondary w-full justify-center" @click="addEntryPoint">
@@ -329,6 +342,7 @@ interface EPForm {
   redirectTo: string
   redirectScheme: string
   redirectPermanent: boolean
+  requireMtls: boolean
 }
 
 interface CRForm {
@@ -372,6 +386,7 @@ function populateForm(cfg: StaticConfig) {
     redirectTo: ep.http?.redirections?.entryPoint?.to ?? '',
     redirectScheme: ep.http?.redirections?.entryPoint?.scheme ?? 'https',
     redirectPermanent: ep.http?.redirections?.entryPoint?.permanent ?? true,
+    requireMtls: ep.http?.tls?.options === 'mtls',
   }))
 
   const docker = cfg.providers?.docker
@@ -419,15 +434,19 @@ function buildConfig(): StaticConfig {
     for (const ep of form.entryPoints) {
       if (!ep.name) continue
       const entry: StaticConfig['entryPoints'][string] = { address: ep.address }
-      if (ep.redirect) {
-        entry.http = {
-          redirections: {
+      if (ep.redirect || ep.requireMtls) {
+        entry.http = {}
+        if (ep.redirect) {
+          entry.http.redirections = {
             entryPoint: {
               to: ep.redirectTo,
               scheme: ep.redirectScheme,
               permanent: ep.redirectPermanent,
             },
-          },
+          }
+        }
+        if (ep.requireMtls) {
+          entry.http.tls = { options: 'mtls' }
         }
       }
       cfg.entryPoints[ep.name] = entry
@@ -492,6 +511,7 @@ function addEntryPoint() {
   form.entryPoints.push({
     _id: uid(), name: '', address: ':80',
     redirect: false, redirectTo: 'websecure', redirectScheme: 'https', redirectPermanent: true,
+    requireMtls: false,
   })
 }
 

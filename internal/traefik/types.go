@@ -40,6 +40,7 @@ type RedirectEntryPoint struct {
 
 type EntryPointTLS struct {
 	CertResolver string   `yaml:"certResolver,omitempty" json:"certResolver,omitempty"`
+	Options      string   `yaml:"options,omitempty"      json:"options,omitempty"`
 	Domains      []Domain `yaml:"domains,omitempty"      json:"domains,omitempty"`
 }
 
