@@ -10,15 +10,15 @@ A lightweight web-based management interface for [Traefik](https://traefik.io/) 
 
 | Dashboard | Certificates |
 |-----------|--------------|
-| ![Dashboard](docs/screenshots/01-dashboard.png) | ![Certificates](docs/screenshots/04-certificates.png) |
+| ![Dashboard](docs/img/01-dashboard.png) | ![Certificates](docs/img/04-certificates.png) |
 
 | Dynamic Config | Activity Log |
 |----------------|--------------|
-| ![Dynamic Config](docs/screenshots/03-dynamic-config.png) | ![Activity](docs/screenshots/06-activity.png) |
+| ![Dynamic Config](docs/img/03-dynamic-config.png) | ![Activity](docs/img/06-activity.png) |
 
 | mTLS | Audit Log |
 |------|-----------|
-| ![mTLS](docs/screenshots/07-mtls.png) | ![Audit Log](docs/screenshots/08-audit-log.png) |
+| ![mTLS](docs/img/07-mtls.png) | ![Audit Log](docs/img/08-audit-log.png) |
 
 ---
 

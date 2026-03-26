@@ -11,7 +11,7 @@
  * The app must be running (go run ../main.go, or docker run …).
  * All /api/* and /auth/* calls are intercepted — no real Traefik needed.
  *
- * Output: ../docs/screenshots/*.png
+ * Output: ../docs/img/*.png
  */
 
 import { chromium } from 'playwright'
@@ -261,7 +261,7 @@ async function main() {
   }
 
   await browser.close()
-  console.log('\nDone. Screenshots saved to docs/screenshots/')
+  console.log('\nDone. Screenshots saved to docs/img/')
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
