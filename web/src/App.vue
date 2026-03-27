@@ -26,7 +26,7 @@
           </div>
           <div v-if="!sidebarCollapsed" class="min-w-0">
             <div class="text-sm font-semibold text-slate-100 leading-tight">Traefik GUI</div>
-            <div class="text-xs text-slate-500 leading-tight">v1.1.3</div>
+            <div class="text-xs text-slate-500 leading-tight">v1.1.4</div>
           </div>
         </div>
       </div>

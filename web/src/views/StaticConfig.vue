@@ -251,11 +251,32 @@
               <div v-if="cr.challengeType === 'dns'" class="space-y-3">
                 <div>
                   <label class="field-label">DNS provider</label>
-                  <input v-model="cr.dnsProvider" type="text" class="input w-full"
-                    placeholder="cloudflare, route53, digitalocean…" />
+                  <select v-model="cr.dnsProvider" class="input w-full">
+                    <option value="">— select a provider —</option>
+                    <option v-for="p in DNS_PROVIDERS" :key="p.id" :value="p.id">{{ p.name }}</option>
+                  </select>
                 </div>
+
+                <!-- Provider hint card -->
+                <div v-if="cr.dnsProvider" class="rounded-lg border border-sky-800/40 bg-sky-900/20 p-3 space-y-2 text-xs">
+                  <p class="font-medium text-sky-300">Set on your Traefik container:</p>
+                  <div v-if="findProvider(cr.dnsProvider)" class="space-y-1 font-mono">
+                    <div v-for="env in findProvider(cr.dnsProvider)!.envVars" :key="env" class="text-slate-300">
+                      {{ env }}<span class="text-slate-500">=your-value</span>
+                    </div>
+                  </div>
+                  <a :href="`https://go-acme.github.io/lego/dns/${cr.dnsProvider}/`"
+                    target="_blank" rel="noopener"
+                    class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 transition-colors">
+                    Full documentation
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                  </a>
+                </div>
+
                 <div>
-                  <label class="field-label">Resolvers <span class="text-slate-600">(comma-separated)</span></label>
+                  <label class="field-label">Resolvers <span class="text-slate-600">(comma-separated, optional)</span></label>
                   <input v-model="cr.dnsResolversStr" type="text" class="input w-full"
                     placeholder="1.1.1.1:53, 8.8.8.8:53" />
                 </div>
@@ -321,6 +342,7 @@ import { useConfigStore } from '@/stores/config'
 import type { StaticConfig } from '@/stores/config'
 import Section from '@/components/Section.vue'
 import Toggle from '@/components/Toggle.vue'
+import { DNS_PROVIDERS, findProvider } from '@/data/dnsProviders'
 
 const store = useConfigStore()
 const tab = ref<'form' | 'yaml'>('form')
