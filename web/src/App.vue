@@ -24,10 +24,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
-          <div v-if="!sidebarCollapsed" class="min-w-0">
-            <div class="text-sm font-semibold text-slate-100 leading-tight">Traefik GUI</div>
-            <div class="text-xs text-slate-500 leading-tight">v1.1.4</div>
-          </div>
+          <a v-if="!sidebarCollapsed" href="https://github.com/deputynl/traefik-gui/releases/tag/v1.1.5"
+            target="_blank" rel="noopener" class="min-w-0 group">
+            <div class="text-sm font-semibold text-slate-100 leading-tight group-hover:text-sky-400 transition-colors">Traefik GUI</div>
+            <div class="text-xs text-slate-500 leading-tight group-hover:text-sky-500 transition-colors">v1.1.5</div>
+          </a>
         </div>
       </div>
 
