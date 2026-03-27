@@ -2,7 +2,7 @@ REGISTRY  ?= ghcr.io/deputynl
 IMAGE     ?= traefik-gui
 TAG       ?= latest
 # VERSION is read from web/package.json if not supplied (e.g. VERSION=1.2.0 make release)
-VERSION   ?= $(shell node -p "require('./web/package.json').version" 2>/dev/null)
+VERSION   ?= $(shell grep '"version"' web/package.json | sed 's/.*"version": "\(.*\)".*/\1/')
 
 .PHONY: build build-arm64 release tag login setup-builder
 

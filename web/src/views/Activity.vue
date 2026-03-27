@@ -85,10 +85,10 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, i) in filtered" :key="i"
+            <tr v-for="entry in filtered" :key="entry.time + entry.method + entry.path"
               class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors cursor-pointer"
-              :class="selected === i ? 'bg-sky-900/20 border-sky-800/50' : ''"
-              @click="selected = selected === i ? null : i">
+              :class="selected === entry ? 'bg-sky-900/20 border-sky-800/50' : ''"
+              @click="selected = selected === entry ? null : entry">
               <td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">{{ formatTime(entry.time) }}</td>
               <td class="py-1.5 pr-3 font-bold" :class="methodColor(entry.method)">{{ entry.method }}</td>
               <td class="py-1.5 pr-3 max-w-xs">
@@ -205,7 +205,7 @@ const paused = ref(false)
 const search = ref('')
 const statusFilter = ref('ALL')
 const methodFilter = ref('ALL')
-const selected = ref<number | null>(null)
+const selected = ref<LogEntry | null>(null)
 const streamState = ref<'connecting' | 'connected' | 'error'>('connecting')
 const available = ref(true)
 const unavailableReason = ref('')
@@ -246,9 +246,7 @@ const filtered = computed(() => {
   return list
 })
 
-const selectedEntry = computed(() =>
-  selected.value !== null ? filtered.value[selected.value] ?? null : null
-)
+const selectedEntry = computed(() => selected.value)
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 
@@ -289,7 +287,6 @@ function startPolling() {
       if (!newEntries.length) return
       entries.value.unshift(...newEntries)
       if (entries.value.length > MAX_ENTRIES) entries.value.length = MAX_ENTRIES
-      if (selected.value !== null) selected.value += newEntries.length
     } catch { /* ignore */ }
   }, 3000)
 }
