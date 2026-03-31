@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full">
+  <div class="flex flex-col flex-1 min-h-0">
     <!-- Header -->
     <div class="flex-shrink-0 px-8 pt-8 pb-4">
       <div class="flex items-center justify-between mb-4">

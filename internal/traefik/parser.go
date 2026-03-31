@@ -26,6 +26,11 @@ func Load(path string) (*StaticConfig, error) {
 
 // Save writes a StaticConfig back to disk as YAML.
 func Save(path string, cfg *StaticConfig) error {
+	// Ensure JSON format whenever a log block is present.
+	if cfg.Log != nil {
+		cfg.Log.Format = "json"
+	}
+
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return fmt.Errorf("marshalling config: %w", err)

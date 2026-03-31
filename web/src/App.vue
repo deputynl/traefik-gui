@@ -1,6 +1,6 @@
 <template>
   <!-- Splash while checking session -->
-  <div v-if="!auth.checked" class="min-h-screen bg-slate-900 flex items-center justify-center">
+  <div v-if="!auth.checked" class="flex-1 bg-slate-900 flex items-center justify-center">
     <svg class="animate-spin w-8 h-8 text-sky-500" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
@@ -11,7 +11,7 @@
   <Login v-else-if="!auth.user" @success="onLogin" />
 
   <!-- Main app shell -->
-  <div v-else class="flex h-screen bg-slate-900 text-slate-100 overflow-hidden">
+  <div v-else class="flex flex-1 min-h-0 bg-slate-900 text-slate-100 overflow-hidden">
     <!-- Sidebar -->
     <aside class="flex-shrink-0 bg-slate-800 border-r border-slate-700 flex flex-col transition-all duration-200"
       :class="sidebarCollapsed ? 'w-14' : 'w-56'">
@@ -24,10 +24,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
-          <a v-if="!sidebarCollapsed" href="https://github.com/deputynl/traefik-gui/releases/tag/v1.1.5"
+          <a v-if="!sidebarCollapsed" href="https://github.com/deputynl/traefik-gui/releases/tag/v1.1.7"
             target="_blank" rel="noopener" class="min-w-0 group">
             <div class="text-sm font-semibold text-slate-100 leading-tight group-hover:text-sky-400 transition-colors">Traefik GUI</div>
-            <div class="text-xs text-slate-500 leading-tight group-hover:text-sky-500 transition-colors">v1.1.5</div>
+            <div class="text-xs text-slate-500 leading-tight group-hover:text-sky-500 transition-colors">v1.1.7</div>
           </a>
         </div>
       </div>
@@ -40,6 +40,7 @@
         <NavItem to="/certificates" :icon="IconCert" label="Certificates" :badge="certBadge" :collapsed="sidebarCollapsed" />
         <NavItem to="/docker" :icon="IconDocker" label="Docker Labels" :collapsed="sidebarCollapsed" />
         <NavItem to="/activity" :icon="IconActivity" label="Activity" :collapsed="sidebarCollapsed" />
+        <NavItem to="/logs" :icon="IconLogs" label="Logs" :collapsed="sidebarCollapsed" />
         <NavItem to="/mtls" :icon="IconMTLS" label="mTLS" :collapsed="sidebarCollapsed" />
         <NavItem to="/audit" :icon="IconAudit" label="Audit Log" :collapsed="sidebarCollapsed" />
 
@@ -86,14 +87,14 @@
     </aside>
 
     <!-- Main content -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-hidden flex flex-col">
       <RouterView />
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { h, ref, computed, onMounted, onUnmounted } from 'vue'
+import { h, ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import NavItem from '@/components/NavItem.vue'
 import Login from '@/views/Login.vue'
@@ -151,8 +152,15 @@ const IconMTLS = mkIcon(() => [
 const IconActivity = mkIcon(() => [
   pl('22 12 18 12 15 21 9 3 6 12 2 12'),
 ])
+// Logs: terminal prompt
+const IconLogs = mkIcon(() => [
+  r({ x: 3, y: 3, width: 18, height: 18, rx: 2 }),
+  p('M7 8l4 4-4 4'),
+  p('M13 16h4'),
+])
 
-const sidebarCollapsed = ref(false)
+const sidebarCollapsed = ref(localStorage.getItem('sidebar-collapsed') === 'true')
+watch(sidebarCollapsed, v => localStorage.setItem('sidebar-collapsed', String(v)))
 
 const auth = useAuthStore()
 const configStore = useConfigStore()

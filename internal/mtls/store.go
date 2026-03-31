@@ -9,10 +9,11 @@ import (
 
 // ClientEntry is metadata about an issued client certificate.
 type ClientEntry struct {
-	ID      string    `json:"id"`
-	Name    string    `json:"name"`
-	Issued  time.Time `json:"issued"`
-	Expires time.Time `json:"expires"`
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Issued   time.Time `json:"issued"`
+	Expires  time.Time `json:"expires"`
+	Password string    `json:"password"`
 }
 
 // Store manages the mTLS CA and client certificate files on disk.
@@ -99,6 +100,27 @@ func (s *Store) RemoveClient(id string) error {
 	_ = os.Remove(s.clientCertPath(id))
 	_ = os.Remove(s.clientKeyPath(id))
 	_ = os.Remove(s.clientP12Path(id))
+	return nil
+}
+
+// RemoveAllClients deletes all issued client certificate files and clears the index.
+func (s *Store) RemoveAllClients() error {
+	entries, err := s.Clients()
+	if err != nil {
+		return err
+	}
+	for _, e := range entries {
+		_ = os.Remove(s.clientCertPath(e.ID))
+		_ = os.Remove(s.clientKeyPath(e.ID))
+		_ = os.Remove(s.clientP12Path(e.ID))
+	}
+	return s.saveIndex([]ClientEntry{})
+}
+
+// DeleteCA removes ca.crt and ca.key from the store.
+func (s *Store) DeleteCA() error {
+	_ = os.Remove(s.CACertPath())
+	_ = os.Remove(s.CAKeyPath())
 	return nil
 }
 

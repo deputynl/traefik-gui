@@ -16,6 +16,8 @@ services:
     volumes:
       # Mount your Traefik config directory (read + write so the GUI can save changes).
       - /etc/traefik:/etc/traefik
+      # Persists CA, CA key and issued client certificates across container restarts.
+      - traefik-mtls:/etc/traefik/mtls
       # Mount Docker socket (read-only) to enable the Docker Labels inspector.
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
@@ -32,3 +34,6 @@ services:
 networks:
   traefik:
     external: true
+
+volumes:
+  traefik-mtls:

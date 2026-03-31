@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8">
+  <div class="p-8 flex-1 overflow-y-auto min-h-0">
     <!-- Header -->
     <div class="flex items-start justify-between mb-8 gap-4">
       <div>

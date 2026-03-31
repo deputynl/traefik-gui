@@ -32,7 +32,8 @@ func toSlug(name string) string {
 
 // IssueClient generates a new client certificate signed by the CA and returns
 // the ClientEntry metadata. The cert and key PEM files are written to the store.
-func (s *Store) IssueClient(name string) (ClientEntry, error) {
+// password is used to protect the PKCS#12 bundle and is stored in the index.
+func (s *Store) IssueClient(name, password string) (ClientEntry, error) {
 	if err := s.ensureDirs(); err != nil {
 		return ClientEntry{}, err
 	}
@@ -92,12 +93,12 @@ func (s *Store) IssueClient(name string) (ClientEntry, error) {
 	pem.Encode(keyFile, &pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 	keyFile.Close()
 
-	// Write PKCS#12 bundle (cert + key, no password) for browser import.
+	// Write PKCS#12 bundle (cert + key, password-protected) for browser import.
 	clientCert, err := x509.ParseCertificate(certDER)
 	if err != nil {
 		return ClientEntry{}, err
 	}
-	p12Data, err := pkcs12.Modern.Encode(key, clientCert, nil, "")
+	p12Data, err := pkcs12.Modern.Encode(key, clientCert, nil, password)
 	if err != nil {
 		return ClientEntry{}, err
 	}
@@ -105,7 +106,7 @@ func (s *Store) IssueClient(name string) (ClientEntry, error) {
 		return ClientEntry{}, err
 	}
 
-	entry := ClientEntry{ID: id, Name: name, Issued: now, Expires: expires}
+	entry := ClientEntry{ID: id, Name: name, Issued: now, Expires: expires, Password: password}
 	if err := s.AddClient(entry); err != nil {
 		return ClientEntry{}, err
 	}

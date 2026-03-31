@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8">
+  <div class="p-8 flex-1 overflow-y-auto min-h-0">
     <div class="mb-8 flex items-start justify-between">
       <div>
         <h1 class="text-2xl font-bold text-slate-100">Dashboard</h1>

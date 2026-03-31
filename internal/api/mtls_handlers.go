@@ -44,11 +44,30 @@ func (s *Server) handleMTLSStatus(w http.ResponseWriter, r *http.Request) {
 // POST /api/mtls/ca — generate (or regenerate) the CA.
 func (s *Server) handleMTLSGenerateCA(w http.ResponseWriter, r *http.Request) {
 	store := s.mtlsStore()
+	if err := store.RemoveAllClients(); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 	if err := store.GenerateCA(); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 	s.audit.Log(s.userFromRequest(r), "mtls-ca", "generated new mTLS CA")
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// DELETE /api/mtls/ca — delete the CA and all client certificates.
+func (s *Server) handleMTLSDeleteCA(w http.ResponseWriter, r *http.Request) {
+	store := s.mtlsStore()
+	if err := store.RemoveAllClients(); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := store.DeleteCA(); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	s.audit.Log(s.userFromRequest(r), "mtls-ca", "deleted mTLS CA and all client certificates")
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
@@ -66,13 +85,22 @@ func (s *Server) handleMTLSDownloadCA(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /api/mtls/clients — issue a new client certificate.
-// Body: {"name": "..."}
+// Body: {"name": "...", "password": "..."}
 func (s *Server) handleMTLSIssueClient(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Name string `json:"name"`
+		Name     string `json:"name"`
+		Password string `json:"password"`
 	}
-	if err := decodeJSON(r, &body); err != nil || strings.TrimSpace(body.Name) == "" {
+	if err := decodeJSON(r, &body); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid request")
+		return
+	}
+	if strings.TrimSpace(body.Name) == "" {
 		writeError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+	if strings.TrimSpace(body.Password) == "" {
+		writeError(w, http.StatusBadRequest, "password is required")
 		return
 	}
 
@@ -82,7 +110,7 @@ func (s *Server) handleMTLSIssueClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := store.IssueClient(body.Name)
+	entry, err := store.IssueClient(body.Name, body.Password)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return

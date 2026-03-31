@@ -7,6 +7,7 @@ import Certificates from '@/views/Certificates.vue'
 import DockerLabels from '@/views/DockerLabels.vue'
 import AuditLog from '@/views/AuditLog.vue'
 import Activity from '@/views/Activity.vue'
+import Logs from '@/views/Logs.vue'
 import MTLS from '@/views/MTLS.vue'
 
 const router = createRouter({
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/docker',        component: DockerLabels,  name: 'docker' },
     { path: '/audit',         component: AuditLog,      name: 'audit' },
     { path: '/activity',      component: Activity,      name: 'activity' },
+    { path: '/logs',          component: Logs,          name: 'logs' },
     { path: '/mtls',          component: MTLS,          name: 'mtls' },
   ],
 })

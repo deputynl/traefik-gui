@@ -1,7 +1,8 @@
 <template>
-  <div class="p-8 max-w-4xl">
-    <!-- Header -->
-    <div class="flex items-start justify-between mb-8 gap-4">
+  <div class="flex flex-col flex-1 min-h-0">
+    <!-- Header (fixed, doesn't scroll) -->
+    <div class="flex-shrink-0 px-8 pt-8 pb-4">
+    <div class="flex items-start justify-between mb-4 gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-100">Static Config</h1>
         <p class="text-slate-400 mt-1 text-sm">
@@ -55,9 +56,9 @@
       Loading…
     </div>
 
-    <template v-else-if="store.appConfig">
+    <template v-if="!store.loading && store.appConfig">
       <!-- Tabs -->
-      <div class="flex gap-1 bg-slate-800/60 border border-slate-700 rounded-lg p-1 mb-6 w-fit">
+      <div class="flex gap-1 bg-slate-800/60 border border-slate-700 rounded-lg p-1 mb-4 w-fit">
         <button v-for="t in ['form', 'yaml']" :key="t"
           class="px-4 py-1.5 text-sm rounded-md capitalize transition-colors"
           :class="tab === t ? 'bg-slate-700 text-slate-100 font-medium' : 'text-slate-400 hover:text-slate-200'"
@@ -66,23 +67,27 @@
       </div>
 
       <!-- Save feedback -->
-      <div v-if="saveMsg" class="mb-5 text-sm px-4 py-2.5 rounded-lg border"
+      <div v-if="saveMsg" class="mb-4 text-sm px-4 py-2.5 rounded-lg border"
         :class="saveMsg.ok
           ? 'bg-emerald-900/30 border-emerald-800 text-emerald-400'
           : 'bg-red-900/30 border-red-800 text-red-400'">
         {{ saveMsg.text }}
       </div>
       <!-- Validation warnings -->
-      <div v-if="warnings.length" class="mb-5 p-4 rounded-lg border bg-yellow-900/20 border-yellow-700/50 text-yellow-300 text-sm space-y-1">
+      <div v-if="warnings.length" class="mb-4 p-4 rounded-lg border bg-yellow-900/20 border-yellow-700/50 text-yellow-300 text-sm space-y-1">
         <div class="font-semibold mb-1">Saved with warnings:</div>
         <div v-for="w in warnings" :key="w.field" class="flex gap-2">
           <span class="font-mono text-yellow-400 flex-shrink-0">{{ w.field }}</span>
           <span>{{ w.message }}</span>
         </div>
       </div>
+    </template>
+    </div><!-- end header -->
 
-      <!-- ── FORM TAB ── -->
-      <div v-if="tab === 'form'" class="space-y-5">
+    <!-- ── FORM TAB: scrollable content area ── -->
+    <div v-if="!store.loading && store.appConfig && tab === 'form'"
+      class="flex-1 min-h-0 overflow-y-auto px-8 pb-8">
+      <div class="space-y-5">
 
         <!-- API & Dashboard -->
         <Section title="API & Dashboard">
@@ -134,17 +139,31 @@
                 </div>
               </div>
 
-              <!-- mTLS -->
-              <div class="border-t border-slate-700/50 pt-3 flex items-start justify-between gap-4">
-                <div class="flex-1">
-                  <Toggle v-model="ep.requireMtls" label="Require mTLS" small />
-                  <p v-if="ep.requireMtls" class="text-xs text-slate-500 mt-1.5 pl-1">
-                    Sets <span class="font-mono">tls.options: mtls@file</span> on this entry point.
+              <!-- TLS -->
+              <div class="border-t border-slate-700/50 pt-3 space-y-3">
+                <!-- Default cert resolver -->
+                <div v-if="form.certResolvers.some(r => r.name)">
+                  <label class="field-label">Default certificate resolver</label>
+                  <select v-model="ep.certResolver" class="input w-full">
+                    <option value="">— none —</option>
+                    <option v-for="cr in form.certResolvers.filter(r => r.name)" :key="cr._id" :value="cr.name">{{ cr.name }}</option>
+                  </select>
+                  <p v-if="ep.certResolver" class="text-xs text-slate-500 mt-1.5">
+                    Sets <span class="font-mono">tls.certResolver: {{ ep.certResolver }}</span> on this entry point — TLS is enabled by default for all routers using it.
                   </p>
                 </div>
-                <router-link to="/mtls" class="text-xs text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap mt-0.5">
-                  Manage mTLS →
-                </router-link>
+                <!-- mTLS -->
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1">
+                    <Toggle v-model="ep.requireMtls" label="Require mTLS" small />
+                    <p v-if="ep.requireMtls" class="text-xs text-slate-500 mt-1.5 pl-1">
+                      Sets <span class="font-mono">tls.options: mtls@file</span> on this entry point — all connections on this entrypoint must present a valid client certificate.
+                    </p>
+                  </div>
+                  <router-link to="/mtls" class="text-xs text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap mt-0.5">
+                    Manage mTLS →
+                  </router-link>
+                </div>
               </div>
             </div>
 
@@ -321,18 +340,18 @@
         </Section>
 
       </div>
+    </div>
 
-      <!-- ── YAML TAB ── -->
-      <div v-if="tab === 'yaml'">
-        <textarea
-          v-model="rawContent"
-          class="w-full h-[calc(100vh-22rem)] font-mono text-sm bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-700 leading-relaxed"
-          spellcheck="false"
-          autocomplete="off"
-        />
-      </div>
-
-    </template>
+    <!-- ── YAML TAB: fills remaining height, no outer scroll ── -->
+    <div v-if="!store.loading && store.appConfig && tab === 'yaml'"
+      class="flex-1 min-h-0 px-8 pb-8">
+      <textarea
+        v-model="rawContent"
+        class="w-full h-full font-mono text-sm bg-slate-900 border border-slate-700 rounded-xl p-4 text-slate-200 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/50 focus:border-sky-700 leading-relaxed"
+        spellcheck="false"
+        autocomplete="off"
+      />
+    </div>
   </div>
 </template>
 
@@ -364,6 +383,7 @@ interface EPForm {
   redirectTo: string
   redirectScheme: string
   redirectPermanent: boolean
+  certResolver: string
   requireMtls: boolean
 }
 
@@ -408,7 +428,8 @@ function populateForm(cfg: StaticConfig) {
     redirectTo: ep.http?.redirections?.entryPoint?.to ?? '',
     redirectScheme: ep.http?.redirections?.entryPoint?.scheme ?? 'https',
     redirectPermanent: ep.http?.redirections?.entryPoint?.permanent ?? true,
-    requireMtls: ep.http?.tls?.options === 'mtls@file' || ep.http?.tls?.options === 'mtls',
+    certResolver: ep.http?.tls?.certResolver ?? '',
+    requireMtls: ep.http?.tls?.options === 'default@file' || ep.http?.tls?.options === 'default' || ep.http?.tls?.options === 'mtls@file' || ep.http?.tls?.options === 'mtls',
   }))
 
   const docker = cfg.providers?.docker
@@ -456,7 +477,7 @@ function buildConfig(): StaticConfig {
     for (const ep of form.entryPoints) {
       if (!ep.name) continue
       const entry: StaticConfig['entryPoints'][string] = { address: ep.address }
-      if (ep.redirect || ep.requireMtls) {
+      if (ep.redirect || ep.requireMtls || ep.certResolver) {
         entry.http = {}
         if (ep.redirect) {
           entry.http.redirections = {
@@ -467,8 +488,10 @@ function buildConfig(): StaticConfig {
             },
           }
         }
-        if (ep.requireMtls) {
-          entry.http.tls = { options: 'mtls@file' }
+        if (ep.requireMtls || ep.certResolver) {
+          entry.http.tls = {}
+          if (ep.requireMtls) entry.http.tls.options = 'mtls@file'
+          if (ep.certResolver) entry.http.tls.certResolver = ep.certResolver
         }
       }
       cfg.entryPoints[ep.name] = entry
@@ -533,7 +556,7 @@ function addEntryPoint() {
   form.entryPoints.push({
     _id: uid(), name: '', address: ':80',
     redirect: false, redirectTo: 'websecure', redirectScheme: 'https', redirectPermanent: true,
-    requireMtls: false,
+    certResolver: '', requireMtls: false,
   })
 }
 

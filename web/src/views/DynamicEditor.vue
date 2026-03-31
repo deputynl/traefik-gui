@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8 max-w-4xl">
+  <div class="p-8 flex-1 overflow-y-auto min-h-0">
     <!-- Back + title -->
     <div class="flex items-center gap-3 mb-6">
       <button class="btn btn-secondary px-2.5 py-2" @click="router.push({ name: 'dynamic' })">

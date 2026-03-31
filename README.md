@@ -54,6 +54,7 @@ services:
       TRAEFIK_CONTAINER_NAME: traefik
     volumes:
       - /etc/traefik:/etc/traefik          # read+write for config changes
+      - traefik-mtls:/etc/traefik/mtls     # CA, CA key + client certs, persisted across restarts
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - traefik
@@ -67,6 +68,9 @@ services:
 networks:
   traefik:
     external: true
+
+volumes:
+  traefik-mtls:
 ```
 
 The GUI is available on port `8888`. Default credentials are `admin` / `admin` — **change these via environment variables before exposing publicly.**
@@ -91,11 +95,17 @@ The GUI is available on port `8888`. Default credentials are `admin` / `admin` �
 
 The mTLS page guides you through three steps:
 
-1. **Generate CA** — creates a self-signed Certificate Authority stored in the container's data directory
-2. **Apply to Traefik** — writes `mtls.yml` to your dynamic config directory, defining the `mtls` TLS option with `clientAuth.caFiles` pointing to the CA cert
-3. **Issue client certificates** — generates a signed client cert/key pair, bundles them as a PKCS#12 (`.p12`) and PEM ZIP for import into browsers or HTTP clients
+1. **Generate CA** — creates a self-signed Certificate Authority; all files (`ca.crt`, `ca.key`) are stored in the `traefik-mtls` volume at `/etc/traefik/mtls/`
+2. **Apply to Traefik** — writes `mtls.yml` to your dynamic config directory, defining the `default` TLS option with `clientAuth.caFiles` pointing to the CA cert; naming it `default` makes mTLS apply to all TLS connections automatically
+3. **Issue client certificates** — generates a signed client cert/key pair, bundles them as a PKCS#12 (`.p12`) and PEM ZIP for import into browsers or HTTP clients; certificates are persisted in the `traefik-mtls` volume
 
-To use mTLS on an entry point, set `tls.options: mtls@file` on the router in your dynamic config.
+Mount the `traefik-mtls` volume in your Traefik container so it can read `ca.crt`:
+
+```yaml
+# In your Traefik service
+volumes:
+  - traefik-mtls:/etc/traefik/mtls:ro
+```
 
 ---
 
