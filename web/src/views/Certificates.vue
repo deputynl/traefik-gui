@@ -85,38 +85,6 @@
         </table>
       </div>
 
-      <!-- mTLS section -->
-      <div class="mt-8">
-        <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">mTLS / TLS Options</h2>
-        <div class="card">
-          <p class="text-sm text-slate-400 mb-4">
-            mTLS is configured via <span class="font-mono text-sky-400">tls.options</span> in a dynamic config file.
-            Create or edit a dynamic file with the structure below, then reference the option name in your router.
-          </p>
-          <pre class="bg-slate-900 rounded-lg p-4 text-xs font-mono text-slate-300 overflow-x-auto">tls:
-  options:
-    myMTLS:
-      minVersion: VersionTLS12
-      clientAuth:
-        caFiles:
-          - /etc/traefik/certs/ca.crt
-        clientAuthType: RequireAndVerifyClientCert</pre>
-          <p class="text-xs text-slate-500 mt-3">
-            Valid <code class="text-sky-400">clientAuthType</code> values:
-            <code class="text-slate-300">NoClientCert</code>,
-            <code class="text-slate-300">RequestClientCert</code>,
-            <code class="text-slate-300">RequireAnyClientCert</code>,
-            <code class="text-slate-300">VerifyClientCertIfGiven</code>,
-            <code class="text-slate-300">RequireAndVerifyClientCert</code>
-          </p>
-          <p class="text-xs text-slate-500 mt-2">
-            Then in your router: <code class="text-sky-400">tls.options: myMTLS@file</code>
-          </p>
-          <router-link to="/dynamic" class="inline-block mt-4 text-sm text-sky-400 hover:text-sky-300 transition-colors">
-            → Manage dynamic config files
-          </router-link>
-        </div>
-      </div>
     </template>
   </div>
 </template>
