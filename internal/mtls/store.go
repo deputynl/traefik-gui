@@ -124,6 +124,46 @@ func (s *Store) DeleteCA() error {
 	return nil
 }
 
+// PublicService is a service exception that bypasses mTLS on the websecuremtls entrypoint.
+type PublicService struct {
+	ID          string `json:"id"`
+	Host        string `json:"host"`
+	Path        string `json:"path"`
+	Description string `json:"description"`
+}
+
+func (s *Store) publicServicesPath() string {
+	return filepath.Join(s.dir, "public-services.json")
+}
+
+// LoadPublicServices returns all configured public service exceptions.
+func (s *Store) LoadPublicServices() ([]PublicService, error) {
+	data, err := os.ReadFile(s.publicServicesPath())
+	if os.IsNotExist(err) {
+		return []PublicService{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var services []PublicService
+	if err := json.Unmarshal(data, &services); err != nil {
+		return nil, err
+	}
+	return services, nil
+}
+
+// SavePublicServices persists the public service exception list to disk.
+func (s *Store) SavePublicServices(services []PublicService) error {
+	if err := os.MkdirAll(s.dir, 0755); err != nil {
+		return err
+	}
+	data, err := json.MarshalIndent(services, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.publicServicesPath(), data, 0644)
+}
+
 func (s *Store) ensureDirs() error {
 	if err := os.MkdirAll(s.dir, 0755); err != nil {
 		return err

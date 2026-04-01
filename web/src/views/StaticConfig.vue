@@ -97,82 +97,57 @@
           </div>
         </Section>
 
-        <!-- Entry Points -->
+        <!-- Entry Points (fixed: web / websecure / websecuremtls) -->
         <Section title="Entry Points">
           <div class="space-y-3">
-            <div v-for="(ep, idx) in form.entryPoints" :key="ep._id"
-              class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-3">
-              <!-- Name + address row -->
-              <div class="flex items-start gap-3">
-                <div class="flex-1">
-                  <label class="field-label">Name</label>
-                  <input v-model="ep.name" type="text" class="input w-full" placeholder="websecure" />
-                </div>
-                <div class="flex-1">
-                  <label class="field-label">Address</label>
-                  <input v-model="ep.address" type="text" class="input w-full" placeholder=":443" />
-                </div>
-                <button class="mt-5 text-slate-500 hover:text-red-400 transition-colors"
-                  @click="form.entryPoints.splice(idx, 1)">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
-              </div>
 
-              <!-- HTTP redirect -->
-              <div>
-                <Toggle v-model="ep.redirect" label="HTTP redirect" small />
-                <div v-if="ep.redirect" class="mt-3 grid grid-cols-2 gap-3 pl-1">
-                  <div>
-                    <label class="field-label">Redirect to</label>
-                    <input v-model="ep.redirectTo" type="text" class="input w-full" placeholder="websecure" />
-                  </div>
-                  <div>
-                    <label class="field-label">Scheme</label>
-                    <select v-model="ep.redirectScheme" class="input w-full">
-                      <option value="https">https</option>
-                      <option value="http">http</option>
-                    </select>
-                  </div>
-                  <Toggle v-model="ep.redirectPermanent" label="Permanent (308)" small />
+            <!-- web -->
+            <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-medium text-slate-200 font-mono">web</span>
+                <div class="flex items-center gap-2">
+                  <label class="field-label mb-0">Address</label>
+                  <input v-model="form.webAddress" type="text" class="input text-xs w-24 text-right" />
                 </div>
               </div>
-
-              <!-- TLS -->
-              <div class="border-t border-slate-700/50 pt-3 space-y-3">
-                <!-- Default cert resolver -->
-                <div v-if="form.certResolvers.some(r => r.name)">
-                  <label class="field-label">Default certificate resolver</label>
-                  <select v-model="ep.certResolver" class="input w-full">
-                    <option value="">— none —</option>
-                    <option v-for="cr in form.certResolvers.filter(r => r.name)" :key="cr._id" :value="cr.name">{{ cr.name }}</option>
-                  </select>
-                  <p v-if="ep.certResolver" class="text-xs text-slate-500 mt-1.5">
-                    Sets <span class="font-mono">tls.certResolver: {{ ep.certResolver }}</span> on this entry point — TLS is enabled by default for all routers using it.
-                  </p>
-                </div>
-                <!-- mTLS -->
-                <div class="flex items-start justify-between gap-4">
-                  <div class="flex-1">
-                    <Toggle v-model="ep.requireMtls" label="Require mTLS" small />
-                    <p v-if="ep.requireMtls" class="text-xs text-slate-500 mt-1.5 pl-1">
-                      Sets <span class="font-mono">tls.options: mtls@file</span> on this entry point — all connections on this entrypoint must present a valid client certificate.
-                    </p>
-                  </div>
-                  <router-link to="/mtls" class="text-xs text-sky-500 hover:text-sky-400 transition-colors whitespace-nowrap mt-0.5">
-                    Manage mTLS →
-                  </router-link>
-                </div>
-              </div>
+              <Toggle v-model="form.httpRedirect" label="Redirect HTTP → HTTPS (websecure)" small />
             </div>
 
-            <button class="btn btn-secondary w-full justify-center" @click="addEntryPoint">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-              </svg>
-              Add entry point
-            </button>
+            <!-- websecure -->
+            <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-medium text-slate-200 font-mono">websecure</span>
+                <div class="flex items-center gap-2">
+                  <label class="field-label mb-0">Address</label>
+                  <input v-model="form.websecureAddress" type="text" class="input text-xs w-24 text-right" />
+                </div>
+              </div>
+              <p class="text-xs text-slate-500">
+                TLS via cert resolver
+                <span v-if="form.crName" class="font-mono text-slate-400">{{ form.crName }}</span>
+                <span v-else class="text-slate-600">(configure a resolver below)</span>.
+                Docker containers expose services here.
+              </p>
+            </div>
+
+            <!-- websecuremtls -->
+            <div class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-medium text-slate-200 font-mono">websecuremtls</span>
+                <div class="flex items-center gap-2">
+                  <label class="field-label mb-0">Address</label>
+                  <input v-model="form.websecuremtlsAddress" type="text" class="input text-xs w-24 text-right" />
+                </div>
+              </div>
+              <p class="text-xs text-slate-500">
+                External mTLS entrypoint. A TCP router (<span class="font-mono text-slate-400">HostSNI(`*`)</span>)
+                enforces client certificate verification at the TLS handshake level, then forwards
+                plaintext traffic to <span class="font-mono text-slate-400">websecure-internal</span>.
+                Managed via the
+                <router-link to="/mtls" class="text-sky-500 hover:text-sky-400 transition-colors">mTLS page</router-link>.
+              </p>
+            </div>
+
           </div>
         </Section>
 
@@ -214,77 +189,67 @@
           </div>
         </Section>
 
-        <!-- Certificate Resolvers -->
-        <Section title="Certificate Resolvers">
+        <!-- Certificate Resolver (single) -->
+        <Section title="Certificate Resolver">
           <div class="space-y-3">
-            <div v-for="(cr, idx) in form.certResolvers" :key="cr._id"
-              class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-4">
-              <!-- Resolver name -->
-              <div class="flex items-center gap-3">
-                <div class="flex-1">
-                  <label class="field-label">Resolver name</label>
-                  <input v-model="cr.name" type="text" class="input w-full" placeholder="myresolver" />
-                </div>
-                <button class="mt-5 text-slate-500 hover:text-red-400 transition-colors"
-                  @click="form.certResolvers.splice(idx, 1)">
-                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                  </svg>
-                </button>
+            <Toggle v-model="form.hasCertResolver" label="Enable ACME certificate resolver" small />
+
+            <div v-if="form.hasCertResolver" class="bg-slate-900/60 border border-slate-700 rounded-xl p-4 space-y-4">
+              <div>
+                <label class="field-label">Resolver name</label>
+                <input v-model="form.crName" type="text" class="input w-full" placeholder="myresolver" />
+                <p class="text-xs text-slate-600 mt-1">
+                  Referenced by <span class="font-mono">websecure</span> and the mTLS TCP router.
+                </p>
               </div>
 
-              <!-- ACME -->
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <label class="field-label">ACME email</label>
-                  <input v-model="cr.email" type="email" class="input w-full" placeholder="you@example.com" />
+                  <input v-model="form.crEmail" type="email" class="input w-full" placeholder="you@example.com" />
                 </div>
                 <div>
                   <label class="field-label">Storage path</label>
-                  <input v-model="cr.storage" type="text" class="input w-full" placeholder="/acme.json" />
+                  <input v-model="form.crStorage" type="text" class="input w-full" placeholder="/acme.json" />
                 </div>
               </div>
 
-              <!-- Challenge type -->
               <div>
                 <label class="field-label">Challenge type</label>
                 <div class="flex gap-2 mt-1.5">
                   <label v-for="ct in ['http', 'tls', 'dns']" :key="ct"
                     class="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-lg border text-sm transition-colors"
-                    :class="cr.challengeType === ct
+                    :class="form.crChallengeType === ct
                       ? 'border-sky-600 bg-sky-900/20 text-sky-300'
                       : 'border-slate-700 text-slate-400 hover:border-slate-600'">
-                    <input v-model="cr.challengeType" type="radio" :value="ct" class="sr-only" />
+                    <input v-model="form.crChallengeType" type="radio" :value="ct" class="sr-only" />
                     {{ ct.toUpperCase() }}
                   </label>
                 </div>
               </div>
 
-              <!-- HTTP challenge fields -->
-              <div v-if="cr.challengeType === 'http'">
+              <div v-if="form.crChallengeType === 'http'">
                 <label class="field-label">Entry point</label>
-                <input v-model="cr.httpEntryPoint" type="text" class="input w-full" placeholder="web" />
+                <input v-model="form.crHttpEntryPoint" type="text" class="input w-full" placeholder="web" />
               </div>
 
-              <!-- DNS challenge fields -->
-              <div v-if="cr.challengeType === 'dns'" class="space-y-3">
+              <div v-if="form.crChallengeType === 'dns'" class="space-y-3">
                 <div>
                   <label class="field-label">DNS provider</label>
-                  <select v-model="cr.dnsProvider" class="input w-full">
+                  <select v-model="form.crDnsProvider" class="input w-full">
                     <option value="">— select a provider —</option>
                     <option v-for="p in DNS_PROVIDERS" :key="p.id" :value="p.id">{{ p.name }}</option>
                   </select>
                 </div>
 
-                <!-- Provider hint card -->
-                <div v-if="cr.dnsProvider" class="rounded-lg border border-sky-800/40 bg-sky-900/20 p-3 space-y-2 text-xs">
+                <div v-if="form.crDnsProvider" class="rounded-lg border border-sky-800/40 bg-sky-900/20 p-3 space-y-2 text-xs">
                   <p class="font-medium text-sky-300">Set on your Traefik container:</p>
-                  <div v-if="findProvider(cr.dnsProvider)" class="space-y-1 font-mono">
-                    <div v-for="env in findProvider(cr.dnsProvider)!.envVars" :key="env" class="text-slate-300">
+                  <div v-if="findProvider(form.crDnsProvider)" class="space-y-1 font-mono">
+                    <div v-for="env in findProvider(form.crDnsProvider)!.envVars" :key="env" class="text-slate-300">
                       {{ env }}<span class="text-slate-500">=your-value</span>
                     </div>
                   </div>
-                  <a :href="`https://go-acme.github.io/lego/dns/${cr.dnsProvider}/`"
+                  <a :href="`https://go-acme.github.io/lego/dns/${form.crDnsProvider}/`"
                     target="_blank" rel="noopener"
                     class="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 transition-colors">
                     Full documentation
@@ -296,18 +261,11 @@
 
                 <div>
                   <label class="field-label">Resolvers <span class="text-slate-600">(comma-separated, optional)</span></label>
-                  <input v-model="cr.dnsResolversStr" type="text" class="input w-full"
+                  <input v-model="form.crDnsResolversStr" type="text" class="input w-full"
                     placeholder="1.1.1.1:53, 8.8.8.8:53" />
                 </div>
               </div>
             </div>
-
-            <button class="btn btn-secondary w-full justify-center" @click="addCertResolver">
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-              </svg>
-              Add resolver
-            </button>
           </div>
         </Section>
 
@@ -370,38 +328,26 @@ const saveMsg = ref<{ ok: boolean; text: string } | null>(null)
 const restarting = ref(false)
 const warnings = ref<Array<{ field: string; message: string }>>([])
 
-let _idCounter = 0
-const uid = () => String(++_idCounter)
-
 // ── Form state ──────────────────────────────────────────────────────────────
-
-interface EPForm {
-  _id: string
-  name: string
-  address: string
-  redirect: boolean
-  redirectTo: string
-  redirectScheme: string
-  redirectPermanent: boolean
-  certResolver: string
-  requireMtls: boolean
-}
-
-interface CRForm {
-  _id: string
-  name: string
-  email: string
-  storage: string
-  challengeType: 'http' | 'tls' | 'dns'
-  httpEntryPoint: string
-  dnsProvider: string
-  dnsResolversStr: string
-}
 
 const form = reactive({
   apiDashboard: false,
   apiInsecure: false,
-  entryPoints: [] as EPForm[],
+  // Fixed entrypoints
+  webAddress: ':80',
+  httpRedirect: true,
+  websecureAddress: ':443',
+  websecuremtlsAddress: ':8443',
+  // Single cert resolver
+  hasCertResolver: false,
+  crName: '',
+  crEmail: '',
+  crStorage: '/acme.json',
+  crChallengeType: 'dns' as 'http' | 'tls' | 'dns',
+  crHttpEntryPoint: 'web',
+  crDnsProvider: '',
+  crDnsResolversStr: '',
+  // Providers
   dockerEnabled: false,
   dockerEndpoint: 'unix:///var/run/docker.sock',
   dockerNetwork: '',
@@ -409,9 +355,10 @@ const form = reactive({
   fileEnabled: false,
   fileDirectory: '',
   fileWatch: true,
-  certResolvers: [] as CRForm[],
+  // Logging
   logLevel: 'INFO',
   accessLogEnabled: false,
+  // Global
   checkNewVersion: false,
   sendAnonymousUsage: false,
 })
@@ -420,17 +367,39 @@ function populateForm(cfg: StaticConfig) {
   form.apiDashboard = cfg.api?.dashboard ?? false
   form.apiInsecure = cfg.api?.insecure ?? false
 
-  form.entryPoints = Object.entries(cfg.entryPoints ?? {}).map(([name, ep]) => ({
-    _id: uid(),
-    name,
-    address: ep.address ?? '',
-    redirect: !!ep.http?.redirections?.entryPoint,
-    redirectTo: ep.http?.redirections?.entryPoint?.to ?? '',
-    redirectScheme: ep.http?.redirections?.entryPoint?.scheme ?? 'https',
-    redirectPermanent: ep.http?.redirections?.entryPoint?.permanent ?? true,
-    certResolver: ep.http?.tls?.certResolver ?? '',
-    requireMtls: ep.http?.tls?.options === 'default@file' || ep.http?.tls?.options === 'default' || ep.http?.tls?.options === 'mtls@file' || ep.http?.tls?.options === 'mtls',
-  }))
+  const web = cfg.entryPoints?.['web']
+  const websecure = cfg.entryPoints?.['websecure']
+  const websecuremtls = cfg.entryPoints?.['websecuremtls']
+
+  form.webAddress = web?.address ?? ':80'
+  form.httpRedirect = !!web?.http?.redirections?.entryPoint
+  form.websecureAddress = websecure?.address ?? ':443'
+  form.websecuremtlsAddress = websecuremtls?.address ?? ':8443'
+
+  // Single cert resolver — take the first one defined
+  const resolvers = Object.entries(cfg.certificatesResolvers ?? {})
+  form.hasCertResolver = resolvers.length > 0
+  if (resolvers.length > 0) {
+    const [name, cr] = resolvers[0]
+    const acme = cr.acme
+    form.crName = name
+    form.crEmail = acme?.email ?? ''
+    form.crStorage = acme?.storage ?? '/acme.json'
+    if (acme?.dnsChallenge) form.crChallengeType = 'dns'
+    else if (acme?.tlsChallenge) form.crChallengeType = 'tls'
+    else form.crChallengeType = 'http'
+    form.crHttpEntryPoint = acme?.httpChallenge?.entryPoint ?? 'web'
+    form.crDnsProvider = acme?.dnsChallenge?.provider ?? ''
+    form.crDnsResolversStr = (acme?.dnsChallenge?.resolvers ?? []).join(', ')
+  } else {
+    form.crName = ''
+    form.crEmail = ''
+    form.crStorage = '/acme.json'
+    form.crChallengeType = 'dns'
+    form.crHttpEntryPoint = 'web'
+    form.crDnsProvider = ''
+    form.crDnsResolversStr = ''
+  }
 
   const docker = cfg.providers?.docker
   form.dockerEnabled = !!docker
@@ -442,23 +411,6 @@ function populateForm(cfg: StaticConfig) {
   form.fileEnabled = !!file
   form.fileDirectory = file?.directory ?? ''
   form.fileWatch = file?.watch ?? true
-
-  form.certResolvers = Object.entries(cfg.certificatesResolvers ?? {}).map(([name, cr]) => {
-    const acme = cr.acme
-    let challengeType: 'http' | 'tls' | 'dns' = 'http'
-    if (acme?.dnsChallenge) challengeType = 'dns'
-    else if (acme?.tlsChallenge) challengeType = 'tls'
-    return {
-      _id: uid(),
-      name,
-      email: acme?.email ?? '',
-      storage: acme?.storage ?? '',
-      challengeType,
-      httpEntryPoint: acme?.httpChallenge?.entryPoint ?? '',
-      dnsProvider: acme?.dnsChallenge?.provider ?? '',
-      dnsResolversStr: (acme?.dnsChallenge?.resolvers ?? []).join(', '),
-    }
-  })
 
   form.logLevel = cfg.log?.level ?? 'INFO'
   form.accessLogEnabled = cfg.accessLog !== undefined && cfg.accessLog !== null
@@ -472,30 +424,31 @@ function buildConfig(): StaticConfig {
 
   cfg.api = { dashboard: form.apiDashboard, insecure: form.apiInsecure }
 
-  if (form.entryPoints.length) {
-    cfg.entryPoints = {}
-    for (const ep of form.entryPoints) {
-      if (!ep.name) continue
-      const entry: StaticConfig['entryPoints'][string] = { address: ep.address }
-      if (ep.redirect || ep.requireMtls || ep.certResolver) {
-        entry.http = {}
-        if (ep.redirect) {
-          entry.http.redirections = {
-            entryPoint: {
-              to: ep.redirectTo,
-              scheme: ep.redirectScheme,
-              permanent: ep.redirectPermanent,
-            },
-          }
+  // Always emit the three standard entrypoints
+  cfg.entryPoints = {
+    web: {
+      address: form.webAddress,
+      ...(form.httpRedirect ? {
+        http: {
+          redirections: { entryPoint: { to: 'websecure', scheme: 'https' } }
         }
-        if (ep.requireMtls || ep.certResolver) {
-          entry.http.tls = {}
-          if (ep.requireMtls) entry.http.tls.options = 'mtls@file'
-          if (ep.certResolver) entry.http.tls.certResolver = ep.certResolver
-        }
-      }
-      cfg.entryPoints[ep.name] = entry
-    }
+      } : {}),
+    },
+    websecure: {
+      address: form.websecureAddress,
+      ...(form.hasCertResolver && form.crName ? {
+        http: { tls: { certResolver: form.crName } }
+      } : {}),
+    },
+    websecuremtls: {
+      address: form.websecuremtlsAddress,
+      // No http.tls — mTLS is enforced by the TCP router in mtls.yml (HostSNI(`*`)).
+    },
+    'websecure-internal': {
+      address: '127.0.0.1:8444',
+      // Plain HTTP, loopback only. Receives traffic forwarded from websecuremtls
+      // after the TCP router has terminated TLS and verified the client certificate.
+    },
   }
 
   if (form.dockerEnabled || form.fileEnabled) {
@@ -515,26 +468,22 @@ function buildConfig(): StaticConfig {
     }
   }
 
-  if (form.certResolvers.length) {
-    cfg.certificatesResolvers = {}
-    for (const cr of form.certResolvers) {
-      if (!cr.name) continue
-      const acme: StaticConfig['certificatesResolvers'][string]['acme'] = {
-        email: cr.email,
-        storage: cr.storage,
-      }
-      if (cr.challengeType === 'http') {
-        acme.httpChallenge = { entryPoint: cr.httpEntryPoint }
-      } else if (cr.challengeType === 'tls') {
-        acme.tlsChallenge = {}
-      } else {
-        acme.dnsChallenge = {
-          provider: cr.dnsProvider,
-          resolvers: cr.dnsResolversStr.split(',').map(s => s.trim()).filter(Boolean),
-        }
-      }
-      cfg.certificatesResolvers[cr.name] = { acme }
+  if (form.hasCertResolver && form.crName) {
+    const acme: StaticConfig['certificatesResolvers'][string]['acme'] = {
+      email: form.crEmail,
+      storage: form.crStorage,
     }
+    if (form.crChallengeType === 'http') {
+      acme.httpChallenge = { entryPoint: form.crHttpEntryPoint }
+    } else if (form.crChallengeType === 'tls') {
+      acme.tlsChallenge = {}
+    } else {
+      acme.dnsChallenge = {
+        provider: form.crDnsProvider,
+        resolvers: form.crDnsResolversStr.split(',').map(s => s.trim()).filter(Boolean),
+      }
+    }
+    cfg.certificatesResolvers = { [form.crName]: { acme } }
   }
 
   cfg.log = { level: form.logLevel }
@@ -552,29 +501,12 @@ function buildConfig(): StaticConfig {
   return cfg
 }
 
-function addEntryPoint() {
-  form.entryPoints.push({
-    _id: uid(), name: '', address: ':80',
-    redirect: false, redirectTo: 'websecure', redirectScheme: 'https', redirectPermanent: true,
-    certResolver: '', requireMtls: false,
-  })
-}
-
-function addCertResolver() {
-  form.certResolvers.push({
-    _id: uid(), name: '', email: '', storage: '/acme.json',
-    challengeType: 'dns', httpEntryPoint: 'web', dnsProvider: '', dnsResolversStr: '',
-  })
-}
-
 async function restart() {
   restarting.value = true
   saveMsg.value = { ok: true, text: 'Restarting Traefik…' }
   try {
     const res = await fetch('/api/traefik/restart', { method: 'POST' })
     if (!res.ok) {
-      // 502/503/504 mean Traefik is already shutting down — treat as success.
-      // Only bail out for application-level errors from traefik-gui itself.
       if (res.status < 500 || res.status === 500) {
         const j = await res.json().catch(() => ({}))
         if (j.error) {
@@ -587,7 +519,6 @@ async function restart() {
   } catch {
     // Connection dropped because Traefik restarted mid-request — expected.
   }
-  // Wait 20 s for Traefik to come back up, then do a single check.
   saveMsg.value = { ok: true, text: 'Waiting for Traefik to come back…' }
   await new Promise(r => setTimeout(r, 4_000))
   try {

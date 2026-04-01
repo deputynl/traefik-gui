@@ -60,6 +60,7 @@ export const useDynamicStore = defineStore('dynamic', () => {
   const loading = ref(false)
   const saving = ref(false)
   const error = ref<string | null>(null)
+  const isNewFile = ref(false)
 
   async function fetchFiles() {
     loading.value = true
@@ -76,11 +77,22 @@ export const useDynamicStore = defineStore('dynamic', () => {
   }
 
   async function fetchFile(name: string) {
+    if (name === '_new_') {
+      currentFile.value = null
+      isNewFile.value = true
+      error.value = null
+      return
+    }
     loading.value = true
     error.value = null
     currentFile.value = null
+    isNewFile.value = false
     try {
       const res = await fetch(`/api/dynamic/${encodeURIComponent(name)}`)
+      if (res.status === 404) {
+        isNewFile.value = true
+        return
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       currentFile.value = await res.json()
     } catch (e) {
@@ -154,7 +166,7 @@ export const useDynamicStore = defineStore('dynamic', () => {
   }
 
   return {
-    files, currentFile, loading, saving, error,
+    files, currentFile, loading, saving, error, isNewFile,
     fetchFiles, fetchFile, saveFile, deleteFile, createService,
   }
 })

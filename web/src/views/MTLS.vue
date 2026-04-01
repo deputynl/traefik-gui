@@ -46,10 +46,8 @@
             Traefik TLS Option
           </h2>
           <p class="text-xs text-slate-500">
-            Writes <span class="font-mono">mtls.yml</span> to your dynamic config directory,
-            defining the <span class="font-mono">mtls</span> TLS option.
-            Enable <span class="font-mono">Require mTLS</span> on the entrypoints that should enforce it in
-            <router-link to="/static" class="text-sky-500 hover:text-sky-400 transition-colors">Static Config</router-link>.
+            Writes <span class="font-mono">mtls.yml</span> to your dynamic config directory.
+            Changes from this page are applied automatically.
           </p>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
@@ -59,8 +57,8 @@
               :class="status?.applied ? 'bg-emerald-400' : 'bg-slate-600'" />
             {{ status?.applied ? 'Applied' : 'Not applied' }}
           </span>
-          <button class="btn btn-primary text-xs" :disabled="!status?.caExists || applyLoading" @click="applyTLS">
-            {{ applyLoading ? 'Applying…' : status?.applied ? 'Re-apply' : 'Apply to Traefik' }}
+          <button class="btn btn-secondary text-xs" :disabled="!status?.caExists || applyLoading" @click="applyTLS">
+            {{ applyLoading ? 'Applying…' : 'Re-apply' }}
           </button>
         </div>
       </div>
@@ -123,6 +121,100 @@
       </table>
     </div>
 
+    <!-- Step 4: Public Service Exceptions -->
+    <div class="card mt-5">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-1">
+            Public Service Exceptions
+          </h2>
+          <p class="text-xs text-slate-500">
+            Services accessible on the mTLS entrypoint without a client certificate.
+          </p>
+        </div>
+        <button class="btn btn-primary text-xs flex-shrink-0" @click="openAddPublic">
+          + Add exception
+        </button>
+      </div>
+
+      <div class="mb-4 p-3 bg-slate-900 rounded border border-slate-700 text-xs text-slate-400 space-y-1.5">
+        <p>By default, all traffic on the <span class="font-mono text-slate-300">websecuremtls</span> entrypoint requires a client certificate. Public exceptions allow specific hosts or paths to bypass mTLS.</p>
+        <p>Docker containers should only use <span class="font-mono text-slate-300">websecure</span> in their labels — never <span class="font-mono text-slate-300">websecuremtls</span>.</p>
+      </div>
+
+      <p v-if="!publicServices.length" class="text-xs text-slate-500">
+        No public exceptions — all traffic requires a client certificate.
+      </p>
+      <table v-else class="w-full text-xs">
+        <thead>
+          <tr class="text-left text-slate-500 border-b border-slate-700">
+            <th class="pb-2 font-medium">Host</th>
+            <th class="pb-2 font-medium">Path</th>
+            <th class="pb-2 font-medium">Description</th>
+            <th class="pb-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="svc in publicServices" :key="svc.id" class="border-b border-slate-800 last:border-0">
+            <td class="py-2.5 pr-4 text-slate-300 font-mono">{{ svc.host }}</td>
+            <td class="py-2.5 pr-4 text-slate-400 font-mono">{{ svc.path || '—' }}</td>
+            <td class="py-2.5 pr-4 text-slate-500">{{ svc.description || '—' }}</td>
+            <td class="py-2.5 text-right">
+              <div class="flex items-center justify-end gap-2">
+                <button class="text-sky-400 hover:text-sky-300 transition-colors" @click="openEditPublic(svc)">Edit</button>
+                <button class="text-slate-500 hover:text-red-400 transition-colors" @click="deletePublicService(svc.id, svc.host)">Delete</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- Public service modal -->
+    <div v-if="showPublicModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      @click.self="closePublicModal">
+      <div class="card w-full max-w-md space-y-4">
+        <h3 class="text-sm font-semibold text-slate-200">
+          {{ editingPublicService ? 'Edit public exception' : 'Add public exception' }}
+        </h3>
+
+        <div class="p-3 bg-yellow-900/30 border border-yellow-800 rounded text-xs text-yellow-300">
+          This exposes the service on the external mTLS port without requiring a client certificate. Anyone with network access can reach it.
+        </div>
+
+        <div>
+          <label class="field-label">Host <span class="text-red-400">*</span></label>
+          <input v-model="publicForm.host" type="text" class="input w-full font-mono"
+            placeholder="e.g. logo.example.com" />
+        </div>
+
+        <div>
+          <label class="field-label">Path <span class="text-slate-600">(optional)</span></label>
+          <input v-model="publicForm.path" type="text" class="input w-full font-mono"
+            placeholder="e.g. /download" />
+          <p class="text-xs text-slate-600 mt-1">Leave empty to make the entire host public. Must start with <span class="font-mono">/</span> if set.</p>
+        </div>
+
+        <div>
+          <label class="field-label">Description <span class="text-slate-600">(optional)</span></label>
+          <input v-model="publicForm.description" type="text" class="input w-full"
+            placeholder="e.g. Public file downloads" />
+        </div>
+
+        <p v-if="publicError" class="text-xs text-red-400">{{ publicError }}</p>
+
+        <div class="flex gap-2 justify-end pt-1">
+          <button class="btn btn-secondary text-xs" @click="closePublicModal">Cancel</button>
+          <button class="btn btn-primary text-xs"
+            :disabled="!publicForm.host.trim() || publicLoading"
+            @click="savePublicService">
+            {{ publicLoading ? 'Saving…' : editingPublicService ? 'Save changes' : 'Add exception' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Issue modal -->
     <div v-if="showIssue" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       @click.self="showIssue = false">
@@ -178,7 +270,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
+
+interface PublicService {
+  id: string
+  host: string
+  path: string
+  description: string
+}
 
 interface ClientEntry {
   id: string
@@ -196,6 +295,22 @@ interface MTLSStatus {
 }
 
 const status = ref<MTLSStatus | null>(null)
+const publicServices = ref<PublicService[]>([])
+const showPublicModal = ref(false)
+const editingPublicService = ref<PublicService | null>(null)
+const publicForm = ref({ host: '', path: '', description: '' })
+// Track last auto-generated description so we don't overwrite user edits.
+let autoDescription = ''
+watch(() => publicForm.value.host, (host) => {
+  if (editingPublicService.value) return
+  const suggested = host.split('.')[0] ?? ''
+  if (publicForm.value.description === autoDescription) {
+    publicForm.value.description = suggested
+  }
+  autoDescription = suggested
+})
+const publicLoading = ref(false)
+const publicError = ref<string | null>(null)
 const caLoading = ref(false)
 const applyLoading = ref(false)
 const issueLoading = ref(false)
@@ -247,6 +362,96 @@ async function fetchStatus() {
   if (res.ok) status.value = await res.json()
 }
 
+// Silently re-writes mtls.yml after any config change. No-op if CA doesn't exist yet.
+async function autoApply() {
+  if (!status.value?.caExists) return
+  const res = await fetch('/api/mtls/apply', { method: 'POST' })
+  if (res.ok) await fetchStatus()
+}
+
+async function fetchPublicServices() {
+  const res = await fetch('/api/mtls/public')
+  if (res.ok) publicServices.value = await res.json()
+}
+
+function openAddPublic() {
+  editingPublicService.value = null
+  publicForm.value = { host: '', path: '', description: '' }
+  autoDescription = ''
+  publicError.value = null
+  showPublicModal.value = true
+}
+
+function openEditPublic(svc: PublicService) {
+  editingPublicService.value = svc
+  publicForm.value = { host: svc.host, path: svc.path, description: svc.description }
+  publicError.value = null
+  showPublicModal.value = true
+}
+
+function closePublicModal() {
+  showPublicModal.value = false
+  editingPublicService.value = null
+  publicError.value = null
+}
+
+async function savePublicService() {
+  const host = publicForm.value.host.trim()
+  const path = publicForm.value.path.trim()
+  const description = publicForm.value.description.trim()
+  const isEdit = !!editingPublicService.value
+
+  if (!host) return
+  if (path && !path.startsWith('/')) {
+    publicError.value = 'Path must start with /'
+    return
+  }
+
+  publicLoading.value = true
+  publicError.value = null
+  try {
+    let res: Response
+    if (editingPublicService.value) {
+      res = await fetch(`/api/mtls/public/${editingPublicService.value.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, path, description }),
+      })
+    } else {
+      res = await fetch('/api/mtls/public', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, path, description }),
+      })
+    }
+    if (!res.ok) {
+      publicError.value = (await res.json()).error || 'Failed to save'
+      return
+    }
+    await fetchPublicServices()
+    await autoApply()
+    closePublicModal()
+    showMsg(true, isEdit ? 'Exception updated.' : 'Exception added.')
+  } catch (e) {
+    publicError.value = String(e)
+  } finally {
+    publicLoading.value = false
+  }
+}
+
+async function deletePublicService(id: string, host: string) {
+  if (!confirm(`Remove public exception for "${host}"?`)) return
+  try {
+    const res = await fetch(`/api/mtls/public/${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error((await res.json()).error)
+    await fetchPublicServices()
+    await autoApply()
+    showMsg(true, `Public exception removed.`)
+  } catch (e) {
+    showMsg(false, String(e))
+  }
+}
+
 async function generateCA() {
   if (status.value?.caExists &&
     !confirm('Regenerating the CA will delete all existing client certificates. Continue?')) return
@@ -255,6 +460,7 @@ async function generateCA() {
     const res = await fetch('/api/mtls/ca', { method: 'POST' })
     if (!res.ok) throw new Error((await res.json()).error)
     await fetchStatus()
+    await autoApply()
     showMsg(true, 'CA generated successfully.')
   } catch (e) {
     showMsg(false, String(e))
@@ -360,5 +566,8 @@ function expiryClass(iso: string) {
   return 'text-slate-400'
 }
 
-onMounted(fetchStatus)
+onMounted(() => {
+  fetchStatus()
+  fetchPublicServices()
+})
 </script>

@@ -8,7 +8,8 @@
           <span class="path-chip">{{ configStore.appConfig?.paths.dynamicDir ?? '…' }}</span>
         </p>
       </div>
-      <button class="btn btn-primary flex-shrink-0" @click="showWizard = true">
+      <button class="btn btn-primary flex-shrink-0"
+        @click="router.push({ name: 'dynamic-editor', params: { file: '_new_' } })">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
         </svg>
@@ -57,41 +58,25 @@
       <span>{{ activeCount }} active</span>
       <span v-if="inactiveCount">· {{ inactiveCount }} inactive (.bak)</span>
     </div>
-
-    <!-- New service wizard -->
-    <ServiceWizard
-      v-if="showWizard"
-      @close="showWizard = false"
-      @created="onCreated"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDynamicStore } from '@/stores/dynamic'
 import { useConfigStore } from '@/stores/config'
 import ServiceCard from '@/components/ServiceCard.vue'
-import ServiceWizard from '@/components/ServiceWizard.vue'
 
 const router = useRouter()
 const store = useDynamicStore()
 const configStore = useConfigStore()
-const showWizard = ref(false)
 
 const activeCount = computed(() => store.files.filter(f => f.active).length)
 const inactiveCount = computed(() => store.files.filter(f => !f.active).length)
 
-async function onCreated(name: string) {
-  showWizard.value = false
-  await store.fetchFiles()
-  router.push({ name: 'dynamic-editor', params: { file: name } })
-}
-
 onMounted(async () => {
   await store.fetchFiles()
-  // Ensure config is loaded for the wizard's cert resolver default.
   if (!configStore.appConfig) configStore.fetchConfig()
 })
 </script>
