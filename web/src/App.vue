@@ -24,10 +24,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
             </svg>
           </div>
-          <a v-if="!sidebarCollapsed" href="https://github.com/deputynl/traefik-gui/releases/tag/v1.2.0"
+          <a v-if="!sidebarCollapsed" :href="`https://github.com/deputynl/traefik-gui/releases/tag/v${version}`"
             target="_blank" rel="noopener" class="min-w-0 group">
             <div class="text-sm font-semibold text-slate-100 leading-tight group-hover:text-sky-400 transition-colors">Traefik GUI</div>
-            <div class="text-xs text-slate-500 leading-tight group-hover:text-sky-500 transition-colors">v1.2.0</div>
+            <div class="text-xs text-slate-500 leading-tight group-hover:text-sky-500 transition-colors">v{{ version }}</div>
           </a>
         </div>
       </div>
@@ -101,6 +101,7 @@ import Login from '@/views/Login.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useConfigStore } from '@/stores/config'
 import { useCertStore } from '@/stores/certs'
+import { version } from '../package.json'
 
 // Render-function icon factory — no Vue runtime compiler needed
 const mkIcon = (children: () => ReturnType<typeof h>[]) => ({
