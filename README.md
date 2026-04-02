@@ -1,8 +1,8 @@
 # Traefik GUI
 
-A lightweight web-based management interface for [Traefik](https://traefik.io/) reverse proxy. Manage your static configuration, dynamic file configs, TLS certificates, mTLS, Docker labels, and access logs — all from a clean dark UI, deployed as a single Docker container.
+A lightweight, single-container web GUI for managing Traefik reverse proxy — built for self-hosters who want to expose services both on their LAN and to the internet, with proper mTLS support and without touching YAML files.
 
-> Built with [Claude Code](https://claude.ai/code) by Anthropic.
+> Built because getting mTLS working in Traefik is painful. This makes it easy. Thanks for your help [Claude Code](https://claude.ai/code) by Anthropic.
 
 ---
 
